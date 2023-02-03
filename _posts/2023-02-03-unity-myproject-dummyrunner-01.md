@@ -14,7 +14,7 @@ sidebar:
 
 {% include video id="r5rji3FfWoE" provider="youtube" %}
 
-[Play Store](https://mmistakes.github.io/minimal-mistakes/docs/quick-start-guide)
+[Play Store](https://play.google.com/store/apps/details?id=com.dong2nol2.dummyrun&hl=ko&gl=US)
 
 
 ## 왜 더미러너 게임을 다시 작업 하는가?
