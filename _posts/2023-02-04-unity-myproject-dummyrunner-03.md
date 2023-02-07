@@ -58,15 +58,15 @@ sidebar:
 {: .text-center}
 
 ![생명 아이템 화면](/images/20230204/unity-myproject-dummyrunner-02-06.png){: .align-center}
-기본 좌측에 생명 관련 아이템을 표시 할 수 있는 건물과 케릭터를 배치합니다.
+생명 관련 아이템을 카드로 표시하고 레벨별 능력이 추가됩니다. -> 기존 다른 아이템인것 통합
 {: .text-center}
 
 ![보호막 아이템 화면](/images/20230204/unity-myproject-dummyrunner-02-07.png){: .align-center}
-중간에 보호막과 관련된 아이템 구입및 정보표시 할 수 있는 케릭터와 건물을 배치합니다.
+보호박 관련 아이템을 카드로 표시하고 레벨별 능력이 추가됩니다. -> 기존 다른 아이템인것 통합
 {: .text-center}
 
 ![점프 아이템 화면](/images/20230204/unity-myproject-dummyrunner-02-08.png){: .align-center}
-우측에 점프관련 아이템 구입및 정보표시 할 수 있는 케릭터와 건물을 배치합니다.
+점프 관련 아이템을 카드로 표시하고 레벨별 능력이 추가됩니다. -> 기존 다른 아이템인것 통합
 {: .text-center}
 
 ### 기존 팝업 디자인 변경 
