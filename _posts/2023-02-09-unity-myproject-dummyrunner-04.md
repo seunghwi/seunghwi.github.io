@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "죽은 게임 더미러너 살리자 - 03"
+title:  "죽은 게임 더미러너 살리자 - 04"
 categories: "Unity"
 tag: ["더미러너", "게임", "유니티", "개발"]
 toc: true
