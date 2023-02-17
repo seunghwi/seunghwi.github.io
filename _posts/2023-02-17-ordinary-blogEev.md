@@ -44,5 +44,5 @@ Github 블로그 만드는 방법을 포스팅 할까 했으나, 이미 잘 정�
 6. Git clone
 7. VSCode 설치
 8. _config.yml의 url만 우선 변경
-9. Git Commit, Push
+9. Git Commit, Push (혼자 작업 하는거라 branch는 따로 생성하지 않고 master에서 바로 작업 합니다.)
 10. 블로그가 보입니다.
