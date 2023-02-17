@@ -35,3 +35,14 @@ Github 블로그 만드는 방법을 포스팅 할까 했으나, 이미 잘 정�
 {: .text-center}
 
 잘 정리된 사이트들이 많아 제가 적용한 하나의 큰 흐름만 정리 하였습니다.
+
+1. Github 레파지토리 생성
+2. 테마 Fork
+3. Local Ruby 설치
+4. Jekyll Server설치
+5. Github Desktop 설치
+6. Git clone
+7. VSCode 설치
+8. _config.yml의 url만 우선 변경
+9. Git Commit, Push
+10. 블로그가 보입니다.
