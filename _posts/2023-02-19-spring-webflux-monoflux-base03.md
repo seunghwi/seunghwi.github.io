@@ -82,7 +82,7 @@ Mono<String> username = Mono.just("john.doe");
 Mono<User> userMono = username.flatMap(name -> userService.getUser(name));
 userMono.subscribe();
 ```
-이 예제는 "john.doe"라는 문자열이 있는 Mono를 만들고, flatMap()을 사용하여 이 문자열을 사용하여 userService.getUser()를 호출합니다. 그 결과로 User 객체를 발행하는 Mono를 반환합니다.
+이 예제는 "john.doe"라는 문자열이 있는 Mono를 만들고, flatMap()을 사용하여 userService.getUser()를 호출합니다. 그 결과로 User 객체를 발행하는 Mono를 반환합니다.
 
 <span style="color:blue">**flatMapMany()는 데이터를 병렬로 처리하고 각 데이터를 다룰 때 사용하고, flatMap()은 데이터를 처리하고 결과를 반환할 때 사용합니다.**</span>
 
