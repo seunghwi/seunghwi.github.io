@@ -1,7 +1,7 @@
 ---
 layout: single
 title:  "Java Collection Stream 예제"
-categories: "Spring"
+categories: "Java"
 tag: ["Java", "Stream"]
 toc: true
 author_profile: true
@@ -9,7 +9,7 @@ sidebar:
     nav: "docs"
 ---
 
-스트림(Stream)은 컬렉션(Collection)을 처리를 위해 Java 8에서 추가된 새로운 방법을 제공하는 API입니다. 스트림은 컬렉션의 요소를 다루는 함수형 스타일의 연산을 지원하며, 병렬 처리(parallel processing)도 쉽게 구현할 수 있습니다.
+스트림(Stream)은 컬렉션(Collection) 처리를 위해 Java 8에서 추가된 API입니다. 스트림은 컬렉션의 요소를 다루는 함수형 스타일의 연산을 지원하며, 병렬 처리(parallel processing)도 쉽게 구현할 수 있습니다.
 
 스트림은 크게 다음과 같은 특징을 가집니다.
 
@@ -49,7 +49,7 @@ List<String> shortWords = words.stream()
 
 System.out.println(shortWords); // [apple, date]
 ```
-위 예제에서는 문자열 리스트(words)에서 filter() 메서드를 이용하여 길이가 5 이하인 단어만 골라내고, collect() 메서드를 이용하여 결과를 리스트로 변환하고 있습니다.
+위 예제에서는 문자열 리스트에서 filter() 메서드를 이용하여 길이가 5 이하인 단어만 골라내고, collect() 메서드를 이용하여 결과를 리스트로 변환하고 있습니다.
 
 **병렬처리 예시입니다..**
 ```java
