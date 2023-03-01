@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "4번째 게임 프로젝젝트 - 기획 01"
+title:  "4번째 게임 프로젝트 - 기획 01"
 categories: "Unity"
 tag: ["기획", "게임", "유니티"]
 toc: true
