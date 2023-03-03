@@ -57,10 +57,17 @@ sidebar:
 ### 스테이지 정보 데이터
 각 스테이지에 대한 정보를 DB에 저장 합니다. 
 
+1. id는 스테이지의 고유 식별자입니다.
+2. nextId는 다음 Open할 스테이지의 ID를 지정합니다.
+3. title는 스테이지 제목을 설정합니다.
+4. isOpen는 활성화 여부를 설정합니다.
+
 |Table Name|Field Name|Type|Description|Default|
 |--|--|--|--|
 |TB_STGINF|id|Int|고유 ID|key|
+|TB_STGINF|nextId|Int|다음 스테이지 ID||
 |TB_STGINF|title|Str|스테이지 제목||
+|TB_STGINF|isOpen|Int|활성화 여부|0|
 |TB_STGINF|description|Str|스테이지에 대한 설명||
 
 ### 미션 진행 데이터
