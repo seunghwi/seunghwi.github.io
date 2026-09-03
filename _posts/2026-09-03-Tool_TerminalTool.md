@@ -18,6 +18,7 @@ TerminalTool은 여러 원격 서버의 접속 정보를 한곳에서 관리하�
 ## 다운로드
 
 **TerminalTool v0.1.0** · Apple Silicon(M1 이상)
+
 [TerminalTool 다운로드](/images/binary/TerminalTool-0.1.0-arm64.dmg){: .btn .btn--primary}
 
 ## 시스템 요구사항
