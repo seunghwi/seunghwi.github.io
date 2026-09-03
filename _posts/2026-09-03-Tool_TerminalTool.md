@@ -13,7 +13,12 @@ sidebar:
 
 # TerminalTool
 
-TerminalTool은 여러 원격 서버의 접속 정보를 한곳에서 관리하고, SSH·TELNET 터미널과 SFTP 파일 전송을 사용할 수 있는 macOS 앱입니다.
+TerminalTool은 여러 원격 서버의 접속 정보를 한곳에서 관리하고, SSH·TELNET 터미널과 SFTP 파일 전송을 사용할 수 있는 macOS 앱입니다. 맥용 무료 원격 제어툴을 구하기 힘들어  제작하였습니다. **완전무료**
+
+## 다운로드
+
+**TerminalTool v0.1.0** · Apple Silicon(M1 이상)
+[TerminalTool 다운로드](/images/binary/TerminalTool-0.1.0-arm64.dmg){: .btn .btn--primary}
 
 ## 시스템 요구사항
 
@@ -72,4 +77,4 @@ TerminalTool은 여러 원격 서버의 접속 정보를 한곳에서 관리하�
 
 ---
 
-TerminalTool은 **SH가 AI와 함께 만들었습니다.**
+
