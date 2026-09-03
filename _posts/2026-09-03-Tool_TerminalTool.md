@@ -3,7 +3,7 @@ layout: single
 title:  "Mac용 SSH 툴"
 categories:
   - "도구 모음"
-permalink: /tool/TerminalTool/
+permalink: /topics/tools/terminal-tool/
 tag: ["mac", "ssh"]
 toc: true
 author_profile: true
