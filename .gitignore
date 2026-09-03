@@ -21,6 +21,9 @@ codekit-config.json
 # macOS
 .DS_Store
 
+# Local agent instructions
+AGENTS.md
+
 # Jekyll generated files
 .jekyll-cache
 .jekyll-metadata

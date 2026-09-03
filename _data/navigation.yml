@@ -7,12 +7,12 @@ main:
   - title: "Search"
     url: /search
 docs:
-  - title: "미완성"
-    children:
-      - title: "Category"
-        url: /categories/
-      - title: "Tag"
-        url: /tags/
+  - title: "전체"
+    url: /
+  - title: "컴퓨터 기술"
+    url: /topics/computer-technology/
+  - title: "도구 모움"
+    url: /topics/tools/
 
   # - title: "대목차2"
   #   children:
