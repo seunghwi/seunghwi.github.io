@@ -545,7 +545,7 @@ table {
     width: calc(100% - var(--post-left-sidebar-width));
     padding-right: var(--post-toc-width);
   }
-*/
+
   .layout--single .page__inner-wrap {
     padding: clamp(1.5rem, 2.3vw, 2rem);
   }
@@ -553,7 +553,7 @@ table {
   .layout--single .page__content {
     font-size: 0.82rem;
   }
-
+*/
   .layout--single .sidebar__right {
     width: var(--post-toc-width);
     margin-right: calc(0px - var(--post-toc-width));
