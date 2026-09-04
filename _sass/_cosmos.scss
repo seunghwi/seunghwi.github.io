@@ -547,7 +547,7 @@ table {
   .layout--single .sidebar__right {
     width: var(--post-toc-width);
     margin-right: calc(0px - var(--post-toc-width));
-    padding-left: clamp(3.5rem, 2.5vw, 2rem);
+    padding-left: clamp(0.5rem, 2.5vw, 2rem);
   }
 /*
   .layout--single .page {
