@@ -540,12 +540,12 @@ table {
   .layout--single .sidebar {
     width: calc(var(--post-left-sidebar-width) - 1rem);
   }
-
+/*
   .layout--single .page {
     width: calc(100% - var(--post-left-sidebar-width));
     padding-right: var(--post-toc-width);
   }
-
+*/
   .layout--single .page__inner-wrap {
     padding: clamp(1.5rem, 2.3vw, 2rem);
   }
