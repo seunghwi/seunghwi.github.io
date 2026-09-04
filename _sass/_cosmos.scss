@@ -543,6 +543,11 @@ table {
   .layout--single .sidebar {
     width: calc(var(--post-left-sidebar-width) - 1rem);
   }
+
+  .layout--single .sidebar__right {
+    width: var(--post-toc-width);
+    margin-right: calc(0px - var(--post-toc-width));
+  }
 /*
   .layout--single .page {
     width: calc(100% - var(--post-left-sidebar-width));
