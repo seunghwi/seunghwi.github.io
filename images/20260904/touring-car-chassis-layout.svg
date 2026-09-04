@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">1:10 전동 투어링 RC카 섀시의 주요 부품 배치</title>
+  <desc id="desc">차량 앞쪽부터 범퍼, 프런트 서스펜션과 디퍼렌셜, 조향 서보, 배터리, 모터와 스퍼 기어, ESC와 수신기, 리어 서스펜션과 디퍼렌셜을 표시한 평면도</desc>
+  <defs>
+    <linearGradient id="deck" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#334155"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <style>
+      .label { fill: #e2e8f0; font: 600 22px system-ui, sans-serif; }
+      .side { fill: #e2e8f0; font: 600 18px system-ui, sans-serif; }
+      .small { fill: #cbd5e1; font: 18px system-ui, sans-serif; }
+      .line { stroke: #94a3b8; stroke-width: 3; fill: none; }
+      .part { stroke: #e2e8f0; stroke-width: 3; }
+    </style>
+  </defs>
+  <rect width="1200" height="760" rx="28" fill="#020617"/>
+  <text x="600" y="42" text-anchor="middle" class="label">차량 앞쪽</text>
+  <path d="M600 58v42m-13-20 13 20 13-20" stroke="#38bdf8" stroke-width="5" fill="none"/>
+
+  <rect x="325" y="92" width="550" height="598" rx="72" fill="url(#deck)" stroke="#64748b" stroke-width="4"/>
+  <path d="M425 112h350l65 38H360z" fill="#64748b" class="part"/>
+  <rect x="365" y="150" width="470" height="55" rx="16" fill="#475569" class="part"/>
+  <circle cx="600" cy="178" r="40" fill="#f59e0b" class="part"/>
+  <text x="600" y="184" text-anchor="middle" class="small">프런트 디프</text>
+
+  <rect x="195" y="116" width="96" height="170" rx="28" fill="#111827" stroke="#94a3b8" stroke-width="4"/>
+  <rect x="909" y="116" width="96" height="170" rx="28" fill="#111827" stroke="#94a3b8" stroke-width="4"/>
+  <path d="M290 195h75m470 0h74" class="line"/>
+  <path d="M330 150l-60 45 60 45m540-90 60 45-60 45" stroke="#22c55e" stroke-width="8" fill="none"/>
+  <path d="M395 135l80 75m330-75-80 75" stroke="#a78bfa" stroke-width="14" stroke-linecap="round"/>
+
+  <rect x="370" y="260" width="174" height="265" rx="16" fill="#2563eb" class="part"/>
+  <text x="457" y="385" text-anchor="middle" class="label">LiPo</text>
+  <text x="457" y="413" text-anchor="middle" class="small">배터리</text>
+
+  <rect x="655" y="264" width="130" height="100" rx="14" fill="#dc2626" class="part"/>
+  <text x="720" y="320" text-anchor="middle" class="label">모터</text>
+  <circle cx="622" cy="352" r="48" fill="#f59e0b" class="part"/>
+  <circle cx="622" cy="352" r="19" fill="#78350f" stroke="#fde68a" stroke-width="3"/>
+  <text x="622" y="420" text-anchor="middle" class="small">스퍼·피니언</text>
+
+  <rect x="650" y="445" width="142" height="72" rx="12" fill="#7c3aed" class="part"/>
+  <text x="721" y="489" text-anchor="middle" class="label">ESC</text>
+  <rect x="555" y="236" width="92" height="70" rx="12" fill="#0891b2" class="part"/>
+  <text x="601" y="278" text-anchor="middle" class="small">서보</text>
+  <rect x="560" y="458" width="65" height="55" rx="10" fill="#0d9488" class="part"/>
+  <text x="592" y="490" text-anchor="middle" class="small">Rx</text>
+
+  <path d="M600 218v82m0 105v36" stroke="#fbbf24" stroke-width="12" stroke-dasharray="15 10"/>
+  <path d="M600 392v138" stroke="#fbbf24" stroke-width="12" stroke-dasharray="15 10"/>
+  <rect x="365" y="540" width="470" height="55" rx="16" fill="#475569" class="part"/>
+  <circle cx="600" cy="568" r="40" fill="#f59e0b" class="part"/>
+  <text x="600" y="574" text-anchor="middle" class="small">리어 디프</text>
+  <path d="M290 570h75m470 0h74" class="line"/>
+  <path d="M330 525l-60 45 60 45m540-90 60 45-60 45" stroke="#22c55e" stroke-width="8" fill="none"/>
+  <path d="M395 530l80 75m330-75-80 75" stroke="#a78bfa" stroke-width="14" stroke-linecap="round"/>
+  <rect x="195" y="484" width="96" height="170" rx="28" fill="#111827" stroke="#94a3b8" stroke-width="4"/>
+  <rect x="909" y="484" width="96" height="170" rx="28" fill="#111827" stroke="#94a3b8" stroke-width="4"/>
+
+  <path d="M360 132H185" class="line"/><text x="18" y="125" class="side">범퍼·바디 마운트</text>
+  <path d="M365 195H220" class="line"/><text x="18" y="188" class="side">벌크헤드·서스펜션</text>
+  <path d="M270 570H145" class="line"/><text x="18" y="563" class="side">휠·타이어</text>
+  <path d="M835 178h170" class="line"/><text x="1018" y="171" class="side">구동축·디퍼렌셜</text>
+  <path d="M805 560h200" class="line"/><text x="1018" y="553" class="side">쇼크·안티롤바</text>
+  <text x="600" y="725" text-anchor="middle" class="small">대표적인 미드 모터 벨트 구동 섀시의 개념도 · 제품마다 실제 배치는 다릅니다.</text>
+</svg>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">투어링 RC카 서스펜션과 조향 구조</title>
+  <desc id="desc">더블 위시본 서스펜션을 정면에서 보고 캠버 링크, 로어 암, 업라이트, 쇼크, 안티롤바, 휠과 타이어의 연결을 표시한 그림</desc>
+  <defs>
+    <style>
+      .label { fill: #e2e8f0; font: 600 22px system-ui, sans-serif; }
+      .small { fill: #cbd5e1; font: 18px system-ui, sans-serif; }
+      .guide { stroke: #64748b; stroke-width: 3; fill: none; }
+      .arm { stroke: #22c55e; stroke-width: 15; stroke-linecap: round; fill: none; }
+      .link { stroke: #38bdf8; stroke-width: 9; stroke-linecap: round; fill: none; }
+    </style>
+  </defs>
+  <rect width="1200" height="680" rx="28" fill="#020617"/>
+  <text x="600" y="45" text-anchor="middle" class="label">정면에서 본 한쪽 서스펜션</text>
+  <path d="M250 145h520" stroke="#475569" stroke-width="28" stroke-linecap="round"/>
+  <text x="245" y="115" class="small">섀시·벌크헤드</text>
+
+  <path d="M420 158L565 455" stroke="#a78bfa" stroke-width="22" stroke-linecap="round"/>
+  <path d="M399 180l42-20m103 305 42-20" stroke="#e9d5ff" stroke-width="6"/>
+  <text x="338" y="332" class="label">쇼크</text>
+  <path d="M382 325h76" class="guide"/>
+
+  <path d="M350 445L695 505" class="arm"/>
+  <circle cx="350" cy="445" r="16" fill="#bbf7d0"/>
+  <circle cx="695" cy="505" r="16" fill="#bbf7d0"/>
+  <text x="320" y="535" class="label">로어 암</text>
+  <path d="M390 520l75-40" class="guide"/>
+
+  <path d="M405 235L690 345" class="link"/>
+  <circle cx="405" cy="235" r="13" fill="#bae6fd"/>
+  <circle cx="690" cy="345" r="13" fill="#bae6fd"/>
+  <text x="242" y="240" text-anchor="end" class="label">캠버 링크</text>
+  <path d="M250 233h125" class="guide"/>
+
+  <path d="M682 340L717 515" stroke="#f59e0b" stroke-width="28" stroke-linecap="round"/>
+  <text x="880" y="350" class="label">업라이트·허브</text>
+  <path d="M725 370h140" class="guide"/>
+  <circle cx="713" cy="436" r="27" fill="#fbbf24" stroke="#fde68a" stroke-width="5"/>
+  <path d="M718 438l135 22" stroke="#cbd5e1" stroke-width="12"/>
+  <text x="875" y="445" class="small">드라이브 샤프트</text>
+
+  <g transform="rotate(-7 790 450)">
+    <rect x="742" y="305" width="100" height="300" rx="36" fill="#111827" stroke="#94a3b8" stroke-width="6"/>
+    <rect x="767" y="335" width="50" height="240" rx="18" fill="#334155"/>
+  </g>
+  <text x="895" y="560" class="label">휠·타이어</text>
+  <path d="M855 540h30" class="guide"/>
+
+  <path d="M300 410q130-90 260 5" stroke="#ef4444" stroke-width="9" fill="none"/>
+  <path d="M300 410v70" stroke="#ef4444" stroke-width="9"/>
+  <text x="125" y="412" class="label">안티롤바</text>
+  <path d="M135 420h145" class="guide"/>
+
+  <path d="M688 281l-115-45" stroke="#f472b6" stroke-width="8" stroke-linecap="round"/>
+  <text x="850" y="255" class="label">스티어링 링크</text>
+  <path d="M705 278h135" class="guide"/>
+  <path d="M690 110v500" stroke="#64748b" stroke-width="2" stroke-dasharray="8 8"/>
+  <text x="705" y="635" class="small">캠버는 휠 중심선과 수직선 사이의 각도입니다.</text>
+</svg>

@@ -1,16 +1,18 @@
 # main links
 main:
-  - title: "Category"
+  - title: "주제"
     url: /categories/
-  - title: "Tag"
+  - title: "태그"
     url: /tags/
-  - title: "Search"
+  - title: "검색"
     url: /search
 docs:
   - title: "전체"
     url: /
   - title: "컴퓨터 기술"
     url: /topics/computer-technology/
+  - title: "AI"
+    url: /topics/ai/
   - title: "도구 모음"
     url: /topics/tools/
   - title: "RC카"
