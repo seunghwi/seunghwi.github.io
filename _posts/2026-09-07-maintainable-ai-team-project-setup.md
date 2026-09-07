@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "AI와 함께 개발하는 팀의 프로젝트 세팅: 실행 환경부터 리뷰·배포까지"
+title: "AI가 바뀌어도 흔들리지 않는 개발: AGENTS.md와 팀 프로젝트 운영 원칙"
 categories:
   - "AI"
 tags:
@@ -8,1018 +8,610 @@ tags:
   - "프로젝트 세팅"
   - "팀 개발"
   - "AGENTS.md"
-  - "Next.js"
-  - "CI/CD"
+  - "컨텍스트 관리"
+  - "유지보수"
 toc: true
 author_profile: true
 sidebar:
   nav: "docs"
 ---
 
-혼자 AI와 코드를 만들 때는 대화 속에서 규칙을 맞출 수 있습니다. 하지만 여러 사람이 각자의 AI와 작업하면 상황이 달라집니다. 한 사람은 API에 SQL을 직접 넣고, 다른 사람은 별도 계층을 만들고, 또 다른 사람은 테스트를 생략할 수 있습니다.
+여러 사람이 각자의 AI와 개발하면 개인의 작업 속도는 빨라져도 프로젝트 전체가 일관되게 발전한다는 보장은 없습니다. 같은 기능을 서로 다른 구조로 구현하고, 한 대화에서 결정한 규칙이 다른 사람의 작업에는 반영되지 않을 수 있습니다.
 
-유지보수 가능한 팀 프로젝트에는 **대화 밖에 남는 규칙, 누구나 재현할 수 있는 환경, 자동으로 확인하는 완료 기준**이 필요합니다. AI가 바뀌거나 담당자가 바뀌어도 같은 방식으로 작업을 이어갈 수 있어야 합니다.
+이를 해결하려면 **AI가 어떤 정보를 보고 판단하는지, 팀의 결정은 어디에 남는지, 결과를 무엇으로 검증하는지**를 프로젝트 시작부터 정해야 합니다.
 
-이 글은 **AI 코딩 도구를 사용하는 여러 개발자가 함께 만드는 웹 서비스의 초기 프로젝트**를 구축합니다. 서비스 내부에서 LLM을 호출하는 기능이나 여러 AI 에이전트를 운영하는 플랫폼을 만드는 글은 아닙니다.
+이 글은 특정 언어나 프레임워크의 설치법 대신, 시스템 구축과 프로그램 개발에 공통으로 적용할 수 있는 AI 협업 환경을 다룹니다. `AGENTS.md` 구성, Markdown 문서의 역할, 규칙의 적용 범위, 필요한 도구와 작업 절차를 정리합니다. 예시는 프로그램 코드가 아니라 프로젝트에 맞게 사용할 수 있는 문서 구성과 작업 지시입니다.
 
-아래 파일과 명령을 순서대로 적용하면 PostgreSQL에 작업을 저장·조회하는 Next.js API, 입력 검증, 단위 테스트, 실제 API 테스트, CI와 컨테이너 실행 환경을 만들 수 있습니다. 업무용 로그인과 권한 모델은 서비스 요구에 따라 추가할 영역이며, 여기서는 로컬 개발용 API 키를 사용합니다.
+## 1. AI가 프로젝트를 이해하는 방식부터 구분한다
 
-## 완성할 구조와 책임을 먼저 정한다
+### 모델의 능력과 우리 프로젝트에 대한 정보는 다르다
 
-기준 환경은 **Node.js 24, npm, Next.js 16, TypeScript 5, PostgreSQL 17, Docker Compose v2, GitHub Actions**입니다. macOS·Linux 또는 Windows의 WSL 환경에서 명령을 실행하는 것으로 가정합니다. Node.js와 Docker, Git은 미리 설치되어 있어야 합니다.
+모델은 학습을 통해 언어와 코드의 패턴을 익힙니다. 하지만 우리 팀이 지난주에 합의한 설계, 이번 릴리스에서 제외한 기능, 회사 내부 용어를 자동으로 알고 있는 것은 아닙니다.
 
-작은 팀이 시작하기 쉽도록 하나의 저장소와 하나의 애플리케이션으로 구성합니다. 배포 단위를 늘리기 전에 코드 안에서 책임을 나눕니다.
+일반적인 코딩 작업에서 프로젝트 문서를 읽히는 것은 모델의 가중치를 다시 학습시키는 과정이 아닙니다. **이번 작업에 사용할 맥락을 제공하는 것**입니다. 따라서 한 팀원이 AI에게 알려준 내용이 다른 팀원의 AI에도 자동으로 전달된다고 가정하면 안 됩니다.
 
-~~~text
-HTTP 요청
-  → route: 인증·입출력·상태 코드
-  → schema: 입력 계약과 검증
-  → repository: SQL과 저장·조회
-  → PostgreSQL
+학습과 추론의 차이는 [AI의 학습·추론 원리]({% post_url 2026-09-07-ai-learning-inference-and-effective-prompts %})에서 더 자세히 다뤘습니다.
 
-사람: 요구사항·설계 판단·리뷰·배포 책임
-AI: 정해진 범위의 구현·검증·변경 설명
-CI: 누구의 코드든 같은 검사 실행
-~~~
+### 모델, 에이전트, 도구, 기억은 각각 무엇일까?
 
-복잡한 업무 규칙이 생기면 route와 repository 사이에 service 계층을 추가합니다. 처음부터 빈 계층을 많이 만드는 대신 실제 책임이 생겼을 때 분리합니다.
+| 요소 | 역할 | 프로젝트에서 확인할 것 |
+|---|---|---|
+| 모델 | 주어진 맥락으로 응답과 작업 방향을 생성 | 어떤 모델을 어떤 업무에 사용하는가 |
+| 코딩 에이전트 | 모델과 파일 읽기·수정·실행 등을 연결해 작업을 진행 | 어떤 지시를 읽고 언제 도구를 실행하는가 |
+| 컨텍스트 | 현재 작업에 실제로 전달된 지시·문서·코드·실행 결과 | 필요한 정보가 포함되어 있는가 |
+| 도구 | 검색, 편집, 테스트, 이슈 조회 같은 작업을 수행 | 접근 범위와 실행 권한이 적절한가 |
+| 메모리 | 다음 작업에서 참고하도록 저장한 정보 | 개인 기록인지, 검토된 팀 기준인지 |
+| 검증 결과 | 테스트·분석·리뷰로 확인한 근거 | 어느 변경과 환경에서 확인했는가 |
 
-## 1. 빈 저장소와 공통 명령 만들기
+에이전트의 작업은 대체로 **정보 확인 → 변경 → 도구 실행 → 결과 확인 → 추가 수정**의 반복입니다. 결과를 확인할 수 있는 도구가 없거나 잘못된 문서를 읽으면, 모델의 능력이 높아도 그럴듯한 오답을 만들 수 있습니다.
 
-아래 명령은 **블로그 저장소가 아닌 새 프로젝트 폴더**에서 실행합니다.
+메모리 역시 제품마다 범위와 저장 방식이 다릅니다. 예를 들어 Claude Code는 사람이 작성하는 지시 문서와 자동 메모리를 구분합니다. 이런 개인·제품별 기억은 검토된 팀 문서를 대신할 수 없습니다. [Claude Code 메모리 문서](https://code.claude.com/docs/en/memory)
 
-~~~bash
-mkdir ai-team-starter
-cd ai-team-starter
-git init -b main
-mkdir -p src/app/api/health src/app/api/tasks src/features/tasks src/lib
-mkdir -p migrations tests/unit tests/api .github/workflows docs/adr docs/tasks
-~~~
+### 같은 모델을 사용한다고 같은 개발이 되는 것은 아니다
 
-이후의 `파일:`에 표시한 경로에 내용을 저장합니다. 중간에 생략된 애플리케이션 파일은 없습니다.
+같은 모델이라도 입력한 자료, 개인 설정, 도구 권한과 기존 코드가 다르면 결과가 달라질 수 있습니다. 팀이 원하는 일관성은 모든 사람이 한 글자까지 같은 코드를 만드는 것이 아닙니다.
 
-**파일: `package.json`**
+다음 기준을 유지하는 것이 더 중요합니다.
 
-~~~json
-{
-  "name": "ai-team-starter",
-  "version": "0.1.0",
-  "private": true,
-  "engines": { "node": ">=24 <25" },
-  "scripts": {
-    "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build",
-    "start": "next start --hostname 127.0.0.1",
-    "lint": "eslint . --max-warnings=0",
-    "typecheck": "next typegen && tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test": "vitest run",
-    "test:api": "dotenv -e .env -- playwright test",
-    "db:migrate": "dotenv -e .env -- node-pg-migrate up",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
-  }
-}
-~~~
+- 같은 용어와 사용자 요구를 해석한다.
+- 같은 모듈 경계와 데이터 계약을 지킨다.
+- 같은 조건에서 오류를 처리한다.
+- 같은 검증 기준으로 완료를 판단한다.
+- 결정의 근거와 변경 이력을 다음 사람이 찾을 수 있다.
 
-次に依存関係をインストールします。
+모델을 통일하는 것은 환경 차이를 줄이는 수단 중 하나입니다. **공통 맥락과 검증 기준을 통일하는 것이 프로젝트 운영의 중심**입니다.
 
-~~~bash
-npm install --save-exact next@16.3.4 react@19.2.8 react-dom@19.2.8 pg@8.23.0 zod@4.5.4 server-only@0.0.1
-npm install --save-dev --save-exact typescript@5 @types/node@24 @types/react@19 @types/react-dom@19 @types/pg@8 eslint@9 eslint-config-next@16.3.4 vitest@4 @playwright/test@1.63.0 node-pg-migrate@9 dotenv-cli@8 prettier@3
-node -p 'process.versions.node' > .nvmrc
-~~~
+## 2. 프로젝트의 기준을 어디에 둘지 정한다
 
-처음 설치하는 담당자가 버전을 확정하고 **`package.json`, `package-lock.json`, `.nvmrc`를 함께 커밋**합니다. 이후 팀원과 CI는 `npm install` 대신 `npm ci`로 동일한 잠금 파일을 사용합니다. 패키지 업데이트는 별도 PR로 검증합니다.
+### 대화, 팀 문서, 코드의 역할을 나눈다
 
-여기서 메이저 버전만 지정한 개발 도구도 `--save-exact`로 설치된 실제 버전이 기록됩니다. 장기적인 재현성의 기준은 위 명령을 매번 다시 실행하는 것이 아니라, 팀이 검증해 커밋한 잠금 파일입니다. 실행 시점의 지원 범위는 [Next.js 설치 문서](https://nextjs.org/docs/app/getting-started/installation)와 [Node.js 릴리스 안내](https://nodejs.org/en/about/previous-releases)를 확인합니다.
+대화는 아이디어를 탐색하고 질문하기 좋습니다. 하지만 승인된 결정을 대화에만 남기면 다른 사람과 다음 세션이 접근하기 어렵습니다.
 
-### 환경별로 달라지면 안 되는 설정
+| 정보 | 기준으로 삼을 위치 | 관리 원칙 |
+|---|---|---|
+| 제품 목적과 범위 | 프로젝트 개요·요구사항 문서 | 제품 책임자가 변경을 확인 |
+| 설계 방향과 그 이유 | 아키텍처 문서·ADR | 설계 책임자가 결정 |
+| 구현의 현재 상태 | 코드·설정·테스트 | 같은 커밋 기준으로 확인 |
+| 이번 작업의 범위 | 작업 문서 또는 이슈 | 담당자와 완료 기준을 명시 |
+| 수행한 검증 | CI·테스트 결과·리뷰 | 실행 대상과 결과를 연결 |
+| 일시적인 가설 | 작업 메모 | 확정 사실과 구분 |
 
-**파일: `.gitignore`**
+요구사항 문서는 의도한 동작을, 코드는 현재 구현을 보여줍니다. 둘이 다르다고 무조건 문서를 코드에 맞춰 고치면 버그를 정답으로 바꿀 수 있습니다. **차이가 버그인지, 승인된 요구 변경인지 먼저 판단**해야 합니다.
+
+이슈 도구에 요구사항 원본이 있다면 Markdown에 같은 내용을 계속 복제하기보다 이슈 ID와 기준 버전을 연결합니다. 하나의 사실을 여러 곳에서 따로 관리하면 어느 쪽이 맞는지 다시 결정해야 합니다.
+
+### 처음에는 다섯 가지 역할만 준비한다
+
+작은 프로젝트는 다음 구성으로 시작할 수 있습니다. `AGENTS.md`를 제외한 아래 문서 이름은 이 글의 제안이며, 모든 AI 도구가 자동으로 읽는 표준 파일명이 아닙니다.
 
 ~~~text
-node_modules/
-.next/
-coverage/
-playwright-report/
-test-results/
-*.tsbuildinfo
-.env*
-!.env.example
-.DS_Store
+프로젝트/
+├─ README.md                 프로젝트 소개와 사람의 시작점
+├─ AGENTS.md                 AI의 공통 작업 규칙과 문서 안내
+└─ docs/
+   ├─ project.md             목적·범위·핵심 용어
+   ├─ development.md         구조·개발 규칙·환경·검증 방법
+   └─ tasks/
+      └─ TASK-001.md         한 작업의 요구·범위·완료 기준·상태
 ~~~
 
-**파일: `.editorconfig`**
+처음부터 문서를 수십 개 만드는 것이 목표는 아닙니다. 읽을 사람과 갱신할 이유가 있는 문서부터 만듭니다. 내용이 길어지거나 담당자가 달라질 때 다음과 같이 분리할 수 있습니다.
 
-~~~ini
-root = true
+| 추가 문서 | 분리할 시점 | 반드시 담을 내용 |
+|---|---|---|
+| `docs/architecture.md` | 모듈·시스템 경계가 복잡해질 때 | 책임, 의존 방향, 데이터 흐름, 변경 제약 |
+| `docs/conventions.md` | 개발 방식이 반복해서 어긋날 때 | 명명, 오류 처리, 경계, 재사용 원칙 |
+| `docs/validation.md` | 검증 종류·환경이 많아질 때 | 변경별 검사, 실행 위치, 실제 명령, 성공 조건 |
+| `docs/contracts/` | 여러 사람이 경계를 나누어 작업할 때 | 입출력, 오류, 데이터 의미, 호환성 |
+| `docs/adr/` | 중요한 설계를 결정할 때 | 결정, 대안, 이유, 비용, 재검토 조건 |
+| `docs/workflows/` | 반복 작업의 절차를 공유할 때 | 시작 조건, 입력, 단계, 검증, 종료 조건 |
+| `docs/ai-tools.md` | 여러 AI 도구를 사용할 때 | 규칙 연결, 버전, 권한, 활성화 확인법 |
+| `docs/runbook.md` | 배포·운영을 시작할 때 | 상태 확인, 장애 대응, 복구, 담당자 |
+| `docs/handoffs/` | 긴 작업을 다른 세션·사람에게 넘길 때 | 기준 커밋, 완료·미완료, 근거, 다음 행동 |
 
-[*]
-charset = utf-8
-end_of_line = lf
-indent_style = space
-indent_size = 2
-insert_final_newline = true
-trim_trailing_whitespace = true
+문서를 분리했다면 기존 문서의 중복 내용을 제거하고 새 위치를 연결합니다. 분리 전후 모두 다른 규칙을 남겨두지 않습니다.
 
-[*.md]
-trim_trailing_whitespace = false
-~~~
+## 3. AGENTS.md는 공통 규칙과 문서의 진입점으로 만든다
 
-**파일: `.prettierignore`**
+### 어떤 내용을 넣을까?
 
-~~~text
-node_modules
-.next
-package-lock.json
-next-env.d.ts
-coverage
-playwright-report
-test-results
-~~~
+`AGENTS.md`에는 작업을 바꿔도 유지되는 지침을 둡니다. 프로젝트 목적의 짧은 요약, 필수로 확인할 자료, 변경 경계, 검증 원칙과 완료 보고 형식이 적합합니다. [AGENTS.md 공개 형식](https://agents.md/)도 에이전트에 프로젝트 맥락과 지침을 전달하는 용도로 설명합니다.
 
-**파일: `tsconfig.json`**
+| 넣을 내용 | 다른 곳에 둘 내용 |
+|---|---|
+| 프로젝트 전체에 적용할 규칙 | 개별 기능의 긴 요구사항 |
+| 작업 시작 시 확인할 상태와 문서 | 완료된 작업의 상세 기록 |
+| 규칙이 충돌할 때의 처리 방법 | 아직 채택하지 않은 아이디어 |
+| 변경 종류별로 읽을 문서 | 모든 라이브러리의 사용 설명서 |
+| 검증과 완료 보고의 기준 | 비밀값·운영 데이터·개인 계정 정보 |
 
-~~~json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./src/*"] }
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  "exclude": ["node_modules"]
-}
-~~~
+핵심은 짧게 쓰는 것만이 아닙니다. **일반적인 작업에서 항상 필요한 정보만 남기고, 나머지는 언제 읽어야 하는지 알려주는 것**입니다.
 
-**파일: `next-env.d.ts`**
+### 범용 AGENTS.md 예시
 
-~~~typescript
-/// <reference types="next" />
-/// <reference types="next/image-types/global" />
-~~~
-
-**파일: `next.config.ts`**
-
-~~~typescript
-import type { NextConfig } from "next";
-
-const config: NextConfig = { output: "standalone" };
-export default config;
-~~~
-
-**파일: `eslint.config.mjs`**
-
-~~~javascript
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTypescript from "eslint-config-next/typescript";
-
-export default defineConfig([
-  ...nextVitals,
-  ...nextTypescript,
-  globalIgnores([".next/**", "next-env.d.ts", "test-results/**", "playwright-report/**"]),
-]);
-~~~
-
-린트, 타입 검사와 빌드는 별도 명령으로 둡니다. 빌드가 성공했다고 코드 스타일과 모든 타입·테스트 검사가 끝났다고 가정하지 않습니다.
-
-## 2. 개인별 DB와 환경변수 만들기
-
-**파일: `.env.example`**
-
-~~~dotenv
-COMPOSE_PROJECT_NAME=ai-team-local
-DB_PORT=55432
-APP_PORT=3000
-DATABASE_URL=postgresql://app:local_password@127.0.0.1:55432/app
-DEV_API_KEY=local-development-only-change-me
-~~~
-
-이 값은 로컬 예제용입니다. 실제 서비스의 비밀번호나 API 키를 예제 파일에 넣지 않습니다. Next.js가 서버에서 읽는 환경변수와 브라우저로 노출하는 `NEXT_PUBLIC_` 변수는 구분해야 합니다. DB 접속 정보와 키에는 `NEXT_PUBLIC_`를 붙이지 않습니다. [환경변수 공식 문서](https://nextjs.org/docs/app/guides/environment-variables)를 참고할 수 있습니다.
-
-**파일: `compose.yaml`**
-
-~~~yaml
-services:
-  db:
-    image: postgres:17
-    environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: local_password
-      POSTGRES_DB: app
-    ports:
-      - "127.0.0.1:${DB_PORT:-55432}:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d app"]
-      interval: 2s
-      timeout: 3s
-      retries: 30
-
-  migrate:
-    profiles: ["app"]
-    build:
-      context: .
-      target: tools
-    command: ["npm", "run", "db:migrate"]
-    environment:
-      DATABASE_URL: postgresql://app:local_password@db:5432/app
-    depends_on:
-      db:
-        condition: service_healthy
-
-  app:
-    profiles: ["app"]
-    build:
-      context: .
-      target: runner
-    environment:
-      DATABASE_URL: postgresql://app:local_password@db:5432/app
-      DEV_API_KEY: ${DEV_API_KEY:?Set DEV_API_KEY in .env}
-      HOSTNAME: 0.0.0.0
-      PORT: 3000
-    ports:
-      - "127.0.0.1:${APP_PORT:-3000}:3000"
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-volumes:
-  db-data:
-~~~
-
-コンテナ内の `db` は Compose のサービス名です。ホスト側のアプリからは `127.0.0.1:55432`、コンテナ内からは `db:5432` に接続します。
-
-起動順だけでは DB が接続可能とは限りません。ヘルスチェックとマイグレーション完了条件を使います。動作は [Compose 起動順の公式説明](https://docs.docker.com/compose/how-tos/startup-order/)で確認できます。
-
-~~~bash
-cp .env.example .env
-docker compose up -d --wait db
-~~~
-
-같은 PC에서 여러 작업을 병렬로 진행할 때는 `.env`의 `COMPOSE_PROJECT_NAME`, `DB_PORT`, `DATABASE_URL`, `APP_PORT`를 작업별로 바꿉니다. 예를 들어 두 번째 작업은 프로젝트명 `ai-team-search`, DB 포트 `55433`, 앱 포트 `3001`을 사용합니다. 프로젝트명만 바꾸면 호스트 포트 충돌까지 해결되는 것은 아닙니다.
-
-## 3. DB 변경을 코드로 관리한다
-
-팀원이 각자 DB 콘솔에서 테이블을 만들면 새 팀원과 CI가 같은 상태를 재현할 수 없습니다. 스키마 변경은 순서가 있는 마이그레이션 파일로 남깁니다.
-
-**파일: `migrations/202609070001_create-tasks.cjs`**
-
-~~~javascript
-exports.up = (pgm) => {
-  pgm.sql(`
-    CREATE TABLE tasks (
-      id uuid PRIMARY KEY,
-      title text NOT NULL CHECK (char_length(title) BETWEEN 1 AND 120),
-      created_at timestamptz NOT NULL DEFAULT now()
-    );
-    CREATE INDEX tasks_created_at_id_idx ON tasks (created_at DESC, id DESC);
-  `);
-};
-
-exports.down = false;
-~~~
-
-`down = false`는 이 예제의 자동 역방향 마이그레이션을 막습니다. 테이블을 지워 데이터까지 없애는 롤백을 기본값으로 제공하지 않기 위해서입니다. 오류가 있으면 새 마이그레이션으로 수정하고, 운영 데이터 복구는 백업 절차로 구분합니다.
-
-~~~bash
-npm run db:migrate
-~~~
-
-적용 이력은 마이그레이션 도구가 관리합니다. 이미 공유된 파일을 수정하지 않고 새로운 파일을 추가합니다. 두 사람이 동시에 마이그레이션을 만들었다면 병합 전에 순서와 상호 의존성을 확인합니다. [node-pg-migrate 시작 안내](https://salsita.github.io/node-pg-migrate/getting-started)와 [마이그레이션 정의](https://salsita.github.io/node-pg-migrate/migrations/)를 참고할 수 있습니다.
-
-## 4. 최소 기능을 책임별로 구현한다
-
-### DB 연결과 개발용 인증
-
-**파일: `src/lib/db.ts`**
-
-~~~typescript
-import "server-only";
-import { Pool } from "pg";
-
-const state = globalThis as unknown as { appPool?: Pool };
-
-export function getPool(): Pool {
-  if (!state.appPool) {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) throw new Error("DATABASE_URL is required");
-    state.appPool = new Pool({
-      connectionString,
-      max: 5,
-      connectionTimeoutMillis: 3000,
-      statement_timeout: 5000,
-    });
-    state.appPool.on("error", () => console.error("database_pool_error"));
-  }
-  return state.appPool;
-}
-~~~
-
-연결 풀을 재사용하고 요청마다 새 풀을 만들지 않습니다. 여러 앱 인스턴스를 띄우면 각 인스턴스의 최대 연결 수를 합산해 DB 한도를 계산해야 합니다. [node-postgres 연결 풀 설명](https://node-postgres.com/features/pooling)을 참고합니다.
-
-**파일: `src/lib/auth.ts`**
-
-~~~typescript
-import "server-only";
-import { timingSafeEqual } from "node:crypto";
-
-export function isAuthorized(request: Request): boolean {
-  const secret = process.env.DEV_API_KEY;
-  if (!secret) return false;
-  const actual = Buffer.from(request.headers.get("authorization") ?? "");
-  const expected = Buffer.from(`Bearer ${secret}`);
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-}
-~~~
-
-이 공유 키는 개발용 API 호출 확인 수단입니다. 사용자 식별이나 조직별 권한을 제공하지 않습니다. 키가 없으면 허용하지 않는 동작을 기본값으로 두고, 공개 서비스 전에는 조직의 로그인·역할·테넌트 권한 모델로 교체합니다.
-
-### 입력 계약과 저장 계층
-
-**파일: `src/features/tasks/schema.ts`**
-
-~~~typescript
-import { z } from "zod";
-
-export const createTaskSchema = z.object({
-  title: z.string().trim().min(1).max(120),
-}).strict();
-~~~
-
-**파일: `src/features/tasks/repository.ts`**
-
-~~~typescript
-import "server-only";
-import { randomUUID } from "node:crypto";
-import { getPool } from "@/lib/db";
-
-export type Task = { id: string; title: string; created_at: Date };
-
-export async function createTask(title: string): Promise<Task> {
-  const result = await getPool().query<Task>(
-    "INSERT INTO tasks (id, title) VALUES ($1, $2) RETURNING id, title, created_at",
-    [randomUUID(), title],
-  );
-  return result.rows[0];
-}
-
-export async function listTasks(): Promise<Task[]> {
-  const result = await getPool().query<Task>(
-    "SELECT id, title, created_at FROM tasks ORDER BY created_at DESC, id DESC LIMIT 20",
-  );
-  return result.rows;
-}
-~~~
-
-SQL에 입력 문자열을 이어 붙이지 않고 매개변수로 전달합니다. [node-postgres 매개변수 쿼리](https://node-postgres.com/features/queries)에서 이 방식을 설명합니다. 목록은 최신 20개로 제한하며, 다음 단계에서 페이지네이션을 별도 계약으로 추가합니다.
-
-### API와 시작 화면
-
-**파일: `src/app/api/tasks/route.ts`**
-
-~~~typescript
-import { isAuthorized } from "@/lib/auth";
-import { createTaskSchema } from "@/features/tasks/schema";
-import { createTask, listTasks } from "@/features/tasks/repository";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
-  try {
-    return Response.json(await listTasks());
-  } catch {
-    console.error("tasks_list_failed");
-    return Response.json({ error: "unavailable" }, { status: 503 });
-  }
-}
-
-export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
-  }
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "invalid_json" }, { status: 400 });
-  }
-  const parsed = createTaskSchema.safeParse(body);
-  if (!parsed.success) {
-    return Response.json({ error: "invalid_input" }, { status: 400 });
-  }
-  try {
-    return Response.json(await createTask(parsed.data.title), { status: 201 });
-  } catch {
-    console.error("tasks_create_failed");
-    return Response.json({ error: "unavailable" }, { status: 503 });
-  }
-}
-~~~
-
-**파일: `src/app/api/health/route.ts`**
-
-~~~typescript
-import { getPool } from "@/lib/db";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-export async function GET() {
-  try {
-    await getPool().query("SELECT id FROM tasks LIMIT 0");
-    return Response.json({ status: "ok" });
-  } catch {
-    return Response.json({ status: "unavailable" }, { status: 503 });
-  }
-}
-~~~
-
-헬스 체크는 프로세스의 생존뿐 아니라 DB 연결과 테이블 적용 여부까지 확인합니다. 실제 운영에서는 프로세스 생존을 보는 liveness와 요청 처리 준비 상태를 보는 readiness를 분리할 수 있습니다.
-
-**파일: `src/app/layout.tsx`**
-
-~~~tsx
-import type { ReactNode } from "react";
-
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="ko"><body>{children}</body></html>;
-}
-~~~
-
-**파일: `src/app/page.tsx`**
-
-~~~tsx
-export default function Home() {
-  return (
-    <main>
-      <h1>AI Team Starter</h1>
-      <p>팀 개발용 API 프로젝트입니다.</p>
-      <a href="/api/health">서비스 상태 확인</a>
-    </main>
-  );
-}
-~~~
-
-route 파일의 HTTP 메서드와 응답 처리 방식은 [Next.js Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route)를 기준으로 합니다.
-
-~~~bash
-npm run dev
-~~~
-
-다른 터미널에서 확인합니다. 아래 키는 `.env.example`의 로컬 값과 같습니다. 키를 변경했다면 요청도 같은 값으로 바꿉니다.
-
-~~~bash
-curl --fail-with-body http://127.0.0.1:3000/api/health
-curl --fail-with-body http://127.0.0.1:3000/api/tasks \
-  -H 'Authorization: Bearer local-development-only-change-me' \
-  -H 'Content-Type: application/json' \
-  -d '{"title":"첫 번째 팀 작업"}'
-curl --fail-with-body http://127.0.0.1:3000/api/tasks \
-  -H 'Authorization: Bearer local-development-only-change-me'
-~~~
-
-정상이라면 상태 응답, 생성한 작업, 작업 배열을 순서대로 받습니다. 키 없이 작업 API를 호출하면 `401`, 빈 제목이면 `400`을 반환합니다.
-
-## 5. AI가 작성한 코드도 같은 기준으로 검사한다
-
-### 단위 테스트: 입력 계약을 고정한다
-
-**파일: `vitest.config.ts`**
-
-~~~typescript
-import { defineConfig } from "vitest/config";
-
-export default defineConfig({
-  test: { environment: "node", include: ["tests/unit/**/*.test.ts"] },
-});
-~~~
-
-**파일: `tests/unit/task-schema.test.ts`**
-
-~~~typescript
-import { describe, expect, it } from "vitest";
-import { createTaskSchema } from "../../src/features/tasks/schema";
-
-describe("작업 생성 계약", () => {
-  it("앞뒤 공백을 제거한다", () => {
-    expect(createTaskSchema.parse({ title: "  작업  " })).toEqual({ title: "작업" });
-  });
-
-  it.each(["", "   ", "a".repeat(121)])("잘못된 제목을 거절한다: %s", (title) => {
-    expect(createTaskSchema.safeParse({ title }).success).toBe(false);
-  });
-
-  it("계약에 없는 필드를 거절한다", () => {
-    expect(createTaskSchema.safeParse({ title: "작업", admin: true }).success).toBe(false);
-  });
-});
-~~~
-
-단위 테스트는 실행 환경이 단순한 입력 계약부터 시작합니다. 비동기 서버 컴포넌트를 무리하게 단위 테스트 도구에 맞추지 않고 API나 브라우저 테스트로 확인할 수 있습니다. [Next.js Vitest 가이드](https://nextjs.org/docs/app/guides/testing/vitest)를 참고합니다.
-
-### API 테스트: 실제 서버와 DB를 연결한다
-
-**파일: `playwright.config.ts`**
-
-~~~typescript
-import { defineConfig } from "@playwright/test";
-
-export default defineConfig({
-  testDir: "tests/api",
-  workers: 1,
-  use: { baseURL: "http://127.0.0.1:3100" },
-  webServer: {
-    command: "npm run start -- --port 3100",
-    url: "http://127.0.0.1:3100/api/health",
-    reuseExistingServer: false,
-    timeout: 60000,
-  },
-});
-~~~
-
-**파일: `tests/api/tasks.spec.ts`**
-
-~~~typescript
-import { randomUUID } from "node:crypto";
-import { expect, test } from "@playwright/test";
-
-test("인증 없는 조회는 거절한다", async ({ request }) => {
-  const response = await request.get("/api/tasks");
-  expect(response.status()).toBe(401);
-});
-
-test("빈 제목과 잘못된 JSON은 저장하지 않는다", async ({ request }) => {
-  const headers = { Authorization: `Bearer ${process.env.DEV_API_KEY}` };
-  const empty = await request.post("/api/tasks", { headers, data: { title: " " } });
-  expect(empty.status()).toBe(400);
-  const malformed = await request.post("/api/tasks", {
-    headers: { ...headers, "Content-Type": "application/json" },
-    data: "{broken",
-  });
-  expect(malformed.status()).toBe(400);
-});
-
-test("생성한 작업이 실제 조회 결과에 있다", async ({ request }) => {
-  const headers = { Authorization: `Bearer ${process.env.DEV_API_KEY}` };
-  const title = `integration-${randomUUID()}`;
-  const created = await request.post("/api/tasks", { headers, data: { title } });
-  expect(created.status()).toBe(201);
-  const task = await created.json();
-  expect(task).toMatchObject({ title });
-  const listed = await request.get("/api/tasks", { headers });
-  expect(listed.status()).toBe(200);
-  expect(await listed.json()).toEqual(expect.arrayContaining([
-    expect.objectContaining({ id: task.id, title }),
-  ]));
-});
-~~~
-
-이번 테스트는 Playwright의 HTTP 요청 기능만 사용하므로 브라우저 바이너리를 설치하지 않습니다. UI 기능을 추가하면 브라우저 설치와 사용자 흐름 테스트를 추가합니다. 서버 시작을 포함한 설정은 [Next.js Playwright 가이드](https://nextjs.org/docs/app/guides/testing/playwright)를 참고할 수 있습니다.
-
-이 테스트는 작업 데이터를 실제로 추가합니다. 운영 DB를 지정하지 않고 개인의 개발 DB나 CI 전용 DB에서 실행합니다. 운영 데이터를 지우는 공통 초기화 명령을 만들지 않습니다.
-
-~~~bash
-npm run format
-npm run check
-npm run test:api
-~~~
-
-`check`는 DB를 쓰지 않는 검사와 빌드를, `test:api`는 마이그레이션된 실제 DB가 필요한 검사를 담당합니다. 테스트 실행 중에는 포트 `3100`을 비워둡니다.
-
-## 6. 공통 규칙을 AGENTS.md로 남긴다
-
-AI에게 매번 긴 설명을 복사하기보다 저장소의 기준 문서를 읽게 합니다. [AGENTS.md](https://agents.md/)는 코딩 에이전트에 프로젝트 맥락과 명령을 전달하기 위한 공개 형식입니다. 도구마다 자동 탐색과 우선순위가 다를 수 있으므로 사용하는 도구에서 적용 여부를 확인합니다.
-
-**파일: `AGENTS.md`**
+다음은 문서가 분리된 팀을 기준으로 한 예시입니다. 실제 저장소의 경로와 책임자에 맞게 수정하고, 존재하지 않는 문서는 먼저 작성하거나 참조를 제거합니다.
 
 ~~~markdown
-# AI Team Starter 작업 규칙
+# 프로젝트 작업 지침
 
-## 먼저 읽기
-- README.md: 실행 방법과 검증 명령
-- docs/architecture.md: 계층과 의존 방향
-- docs/tasks/: 이번 작업의 요구사항과 완료 기준
-- docs/adr/: 기존 설계 결정
+## 목적
+- 프로젝트의 목적과 범위는 docs/project.md를 기준으로 한다.
+- 요구사항, 구현의 현재 상태, 미확정 가설을 구분한다.
 
-## 구현 원칙
-- route는 인증·입출력·상태 코드를 담당한다.
-- 입력 계약은 src/features/<기능>/schema.ts에 둔다.
-- SQL은 repository.ts에 두고 매개변수 쿼리를 사용한다.
-- 브라우저 코드에서 DB와 서버 비밀값에 접근하지 않는다.
-- 이미 공유된 마이그레이션을 고치지 않고 새 파일을 추가한다.
-- 요청 범위를 벗어난 의존성·아키텍처 변경은 별도 제안으로 남긴다.
+## 시작할 때
+- 현재 작업 위치, 브랜치와 기존 변경을 확인한다.
+- 이번 작업 문서와 관련 구현·테스트를 읽는다.
+- 적용할 규칙 문서와 변경 가능한 범위를 확인한다.
 
-## 작업 방식
-- 시작할 때 git status와 관련 코드·테스트를 확인한다.
-- 다른 사람이 만든 변경을 덮어쓰지 않는다.
-- 작업 범위와 충돌 가능 파일을 확인한 뒤 수정한다.
-- 동작이 바뀌면 그 계약을 검증하는 테스트를 함께 수정한다.
-- 테스트를 삭제하거나 실패를 무시하는 옵션으로 통과시키지 않는다.
+## 문서 선택
+- 구조를 바꾸면 docs/architecture.md와 관련 docs/adr/를 읽는다.
+- 외부 입출력을 바꾸면 해당 docs/contracts/ 문서를 읽는다.
+- 검증은 docs/validation.md의 변경 유형별 절차를 따른다.
+- 배포·복구 작업이면 docs/runbook.md를 읽는다.
+
+## 변경 원칙
+- 이미 존재하는 구조와 공통 기능을 확인한 뒤 구현한다.
+- 다른 작업자의 변경을 덮어쓰지 않는다.
+- 요청과 무관한 리팩터링·의존성 갱신을 섞지 않는다.
+- 공개 계약·데이터 형식·권한 모델 변경은 영향을 먼저 확인한다.
+- 미확정 결정을 확정된 사실처럼 코드나 문서에 반영하지 않는다.
+
+## 판단과 질문
+- 범위 안의 되돌릴 수 있는 구현 선택은 기존 기준에 따라 진행한다.
+- 완료 기준·호환성·데이터 손실에 영향을 주는 모호함은 담당자에게 확인한다.
+- 규칙 충돌을 발견하면 경로와 해당 문장을 제시한다.
+- 승인된 예외는 적용 범위와 종료 조건을 문서에 남긴다.
 
 ## 검증
-- npm run check
-- DB 관련 변경이면 npm run db:migrate 후 npm run test:api
-- 실행하지 못한 검사는 완료 보고에 명시한다.
+- 변경한 동작과 실패 조건에 맞는 검증을 수행한다.
+- 검사를 통과시키기 위해 기준을 임의로 약화하지 않는다.
+- 실행 결과와 추정 결과를 구분한다.
+- 실행하지 못한 검사는 이유와 함께 보고한다.
 
-## 권한 경계
-- .env, 운영 데이터와 실제 토큰을 답변·로그·커밋에 넣지 않는다.
-- 테스트에는 개인 개발 DB나 CI 전용 DB만 사용한다.
-- main 직접 푸시, 운영 배포와 운영 마이그레이션은 작업자의 별도 승인을 따른다.
-
-## 완료 보고
-- 변경한 사용자 동작과 관련 파일
-- 실행한 검증과 결과
-- 남은 제약, 데이터 변경과 배포 시 주의점
+## 완료와 인계
+- 바뀐 동작, 검증 근거, 미완료 항목을 정리한다.
+- 요구·계약·운영 방식이 바뀌면 관련 문서를 같은 변경에서 갱신한다.
+- 다음 작업자가 대화 원문 없이 이어갈 수 있도록 작업 상태를 남긴다.
 ~~~
 
-이 파일은 **지시 문서이며 접근 제어 장치가 아닙니다.** 운영 비밀값 접근이나 병합 권한은 실제 계정·도구 권한과 저장소 보호 규칙으로 제한합니다. AI의 답변에 “테스트 통과”라고 적혀 있다는 것과 CI가 통과했다는 것도 구분해야 합니다.
+“모든 작업 전에 승인받아라”처럼 넓은 규칙은 사소한 변경도 중단시킬 수 있습니다. 반대로 “알아서 전부 해결해라”는 지시는 데이터 형식이나 요구사항까지 임의로 바꾸게 할 수 있습니다. **계속 진행해도 되는 선택과 확인이 필요한 결정을 구분**해야 합니다.
 
-### 사람이 읽는 문서도 같은 저장소에 둔다
+이 예시가 도구 자체의 권한 설정을 바꾸지는 않습니다. 운영 배포나 파일 접근의 실제 허용 범위는 도구와 계정 설정으로 별도 관리합니다.
 
-**파일: `README.md`**
+### 하위 규칙은 차이만 적는다
+
+큰 저장소에서는 특정 모듈에 별도 규칙이 필요할 수 있습니다. 공통 규칙을 복제하지 않고 그 영역에만 해당하는 제약을 추가합니다.
+
+예를 들어 결제 영역은 금액 정밀도와 재시도 시 중복 처리, 파일 저장 영역은 인코딩과 이전 형식 호환성, UI 영역은 접근성과 공통 디자인 사용을 다룰 수 있습니다.
+
+하위 `AGENTS.md`의 탐색과 우선순위는 도구별로 확인해야 합니다. Codex는 전역 지침과 프로젝트 경로의 지침을 조합하며 override 파일과 로딩 한도가 있습니다. 경로가 더 가깝다는 이유만으로 모든 제품이 같은 방식으로 작동한다고 가정하지 않습니다. [Codex AGENTS.md 공식 문서](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+
+## 4. 문서는 ‘있다’보다 ‘언제 읽고 갱신한다’가 중요하다
+
+### 프로젝트 개요: 무엇을 만들고 무엇을 만들지 않는가?
+
+`docs/project.md`에는 대상 사용자, 해결하려는 문제, 범위, 핵심 용어와 품질 목표를 둡니다.
+
+“관리 시스템을 만든다”만으로는 부족합니다. 누가 어떤 업무를 하고, 무엇을 성공으로 판단하는지 적어야 합니다. 예를 들어 “완료”가 저장 성공인지, 검토 승인인지, 외부 전송 완료인지 다르면 화면·데이터·테스트가 모두 달라집니다.
+
+운영 목표도 측정 조건과 함께 정합니다. “빨라야 한다” 대신 데이터 규모, 동시 사용자 수, 허용 지연 시간을 정하되, 근거 없는 숫자를 AI가 대신 확정하지 않게 합니다.
+
+### 요구사항과 계약: 구현 방법보다 관찰할 결과를 쓴다
+
+기능 문서에는 정상 동작뿐 아니라 오류·권한·중복·취소·기존 데이터 처리 조건을 포함합니다. 다음 틀은 언어와 플랫폼에 관계없이 사용할 수 있습니다.
 
 ~~~markdown
-# AI Team Starter
+# 기능: 문서 보관
 
-Node.js 24, npm, Docker Compose v2가 필요합니다.
+상태: 검토 중
+결정 담당: 제품 담당자
+관련 작업: TASK-001
 
-## 처음 실행
-1. .nvmrc에 맞는 Node.js를 사용합니다.
-2. npm ci
-3. cp .env.example .env
-4. docker compose up -d --wait db
-5. npm run db:migrate
-6. npm run dev
+## 사용자와 목적
+- 사용자가 목록에서 더 이상 사용하지 않는 문서를 정리한다.
+
+## 동작 계약
+- 보관한 문서는 기본 목록에서 제외한다.
+- 보관한 문서의 원본과 변경 이력은 유지한다.
+- 같은 문서를 다시 보관해도 결과가 중복 생성되지 않는다.
+- 권한이 없는 사용자의 요청은 거절한다.
+
+## 이번 범위에서 제외
+- 영구 삭제와 보관 해제
+
+## 검증 기준
+- 정상 요청, 권한 없는 요청, 반복 요청의 결과를 확인한다.
+- 기존 문서를 계속 읽을 수 있는지 확인한다.
+
+## 미정 사항
+- 보관 권한을 갖는 역할: 제품 담당자 확정 필요
+~~~
+
+이 예시는 검토 중인 문서입니다. 권한 역할처럼 결과를 바꾸는 미정 사항을 AI가 임의로 채워 구현해서는 안 됩니다. 담당자가 확정한 뒤 상태를 변경합니다.
+
+API만 계약이 되는 것은 아닙니다. 파일 형식, 명령줄 옵션, 이벤트, 플러그인 인터페이스, UI의 공통 동작도 여러 사람이 작업을 나누는 경계입니다.
+
+### 아키텍처와 ADR: 무엇을 지키며 왜 그렇게 정했는가?
+
+아키텍처 문서는 폴더 이름을 나열하는 데서 끝내지 않습니다. 각 영역의 책임, 접근 가능한 데이터, 의존해도 되는 방향과 변경 시 영향을 설명합니다.
+
+ADR(Architecture Decision Record)은 중요한 결정의 이유를 남기는 문서입니다. 다음 항목이면 시작할 수 있습니다.
+
+| 항목 | 적을 내용 |
+|---|---|
+| 상태 | 제안, 채택, 폐기, 다른 결정으로 대체 |
+| 배경 | 해결하려는 문제와 제약 |
+| 결정 | 선택한 방식 |
+| 대안 | 비교한 다른 방식 |
+| 이유와 비용 | 선택 근거, 얻는 이점, 감수하는 불편 |
+| 재검토 조건 | 어떤 변화가 생기면 다시 판단할지 |
+| 연결 | 대체한 ADR, 관련 요구사항·변경 |
+
+AI는 익숙한 일반 패턴을 제안할 수 있습니다. ADR이 있으면 그 패턴이 이 프로젝트에서 채택되지 않은 이유도 함께 판단할 수 있습니다. 결정이 바뀌면 과거 문서를 조용히 덮어쓰기보다 대체 관계를 남깁니다.
+
+### 검증 문서: ‘테스트해줘’를 실행 가능한 기준으로 바꾼다
+
+`docs/validation.md`에는 프로젝트의 실제 검증 도구와 실행 명령, 실행 위치, 필요한 환경, 성공 기준을 적습니다. 이 글처럼 범용 원칙을 설명하는 문서와 달리, **각 프로젝트의 검증 문서는 구체적이어야 합니다.** “언어에 맞게 검사”라고만 남기지 않습니다.
+
+| 변경 유형 | 확인할 동작 | 남길 근거 |
+|---|---|---|
+| 업무 규칙 | 정상·경계·실패 조건 | 관련 테스트와 실행 결과 |
+| 외부 계약 | 기존 호출자·이전 형식과의 호환성 | 계약 검사와 영향 목록 |
+| 데이터 변경 | 새 환경 구성과 기존 데이터 전환 | 마이그레이션·복구 검증 |
+| UI 변경 | 실제 사용자 흐름과 접근성 | 화면·상호작용 확인 |
+| 성능 변경 | 같은 조건에서의 전후 차이 | 측정 환경과 수치 |
+| 문서·규칙 변경 | 링크, 모순, AI의 적용 여부 | 문서 검사와 대표 작업 결과 |
+
+테스트가 있다는 사실보다 **무엇이 잘못되면 그 테스트가 실패하는지**가 중요합니다. AI가 잘못 만든 구현에 맞춰 테스트도 함께 작성할 수 있으므로, 요구사항의 완료 기준을 먼저 확정하고 그 기준과 테스트를 비교합니다.
+
+## 5. 규칙은 강도·범위·예외·검증 방법을 함께 정의한다
+
+### 추상적인 문장을 행동으로 바꾼다
+
+| 모호한 규칙 | 확인 가능한 규칙 |
+|---|---|
+| 유지보수하기 좋게 작성한다 | 기존 책임 경계를 유지하고 새 의존 방향은 설계 문서에 반영한다 |
+| 공통 코드를 잘 활용한다 | 새 기능을 만들기 전에 같은 역할의 기존 구현을 찾아 재사용 가능성을 확인한다 |
+| 충분히 테스트한다 | 바뀐 동작의 정상·실패 조건을 검증하고 실행 결과를 기록한다 |
+| 큰 변경은 질문한다 | 외부 계약·데이터 손실·권한 범위 변경은 영향과 대안을 제시해 결정받는다 |
+| 항상 최신 기술을 쓴다 | 현재 승인된 버전을 사용하고 갱신은 별도 변경으로 검증한다 |
+
+중요한 규칙에는 다음과 같은 정의를 붙일 수 있습니다.
+
+~~~markdown
+# 규칙 R-012: 공유 데이터 형식의 호환성
+
+강도: 필수
+범위: 다른 프로그램이나 모듈이 읽는 저장·전송 형식
+내용: 기존 소비자가 읽지 못하는 변경을 사전 합의 없이 적용하지 않는다.
+이유: 생산자와 소비자의 배포 시점이 다를 수 있다.
+검증: 이전 형식의 샘플과 기존 소비자 기준으로 호환성을 확인한다.
+예외: 변경 담당자가 전환 계획과 영향을 기록하고 계약 소유자가 승인한다.
+소유자: 해당 계약의 관리 담당자
+재검토: 소비자 지원 범위가 변경될 때
+~~~
+
+모든 사소한 규칙에 번호와 승인 절차를 붙일 필요는 없습니다. 반복해서 충돌하거나 시스템의 안정성에 영향을 주는 규칙부터 명확하게 정의합니다.
+
+### 팀 문서의 우선순위와 제품의 지시 우선순위는 다르다
+
+팀 내부에서는 “승인된 계약을 작업 메모보다 우선한다”, “개인 취향으로 공통 규칙을 바꾸지 않는다”처럼 판단 기준을 정할 수 있습니다. 그러나 Markdown에 순서를 적는다고 AI 제품의 시스템 지시나 관리자 정책을 덮어쓰지는 못합니다.
+
+다음처럼 **문서의 책임을 나누고 충돌 시 처리 절차를 정하는 방식**이 안전합니다.
+
+- 보안과 접근 범위는 조직 정책과 실제 도구 권한으로 관리합니다.
+- 공통 개발 기준은 승인된 저장소 문서를 사용합니다.
+- 기능별 문서는 자기 범위의 상세 계약을 정의합니다.
+- 작업 문서는 이번 변경의 범위를 정의하며 공통 기준을 몰래 바꾸지 않습니다.
+- 개인 설정은 팀 기준과 충돌하지 않는 선호만 담습니다.
+- 실제 충돌은 담당자가 판단하고, 승인된 예외나 변경을 공통 문서에 반영합니다.
+
+예를 들어 작업 요청에 “테스트는 생략해”라고 적혀 있는데 필수 검사 규칙이 있다면, AI가 상황을 숨긴 채 한쪽을 선택하게 하지 않습니다. 해당 규칙과 영향, 이미 승인된 예외의 유무를 확인하도록 합니다.
+
+### 규칙을 강제할 수 있는 곳에 연결한다
+
+자연어 규칙은 행동을 유도하지만 보장을 만들지는 않습니다. 같은 기준을 실행 도구에도 연결합니다.
+
+| 지켜야 할 기준 | 실제로 연결할 장치 |
+|---|---|
+| 형식과 기본 정적 규칙 | 포매터·린터 설정 |
+| 타입과 모듈 의존 경계 | 타입 검사·정적 분석·아키텍처 검사 |
+| 기능과 호환성 | 자동 테스트·계약 테스트 |
+| 승인된 변경만 병합 | 필수 CI 검사·브랜치 보호·리뷰 |
+| 운영 데이터 접근 제한 | 계정 권한·샌드박스·도구 허용 범위 |
+| 배포 전 확인 | 배포 환경 보호와 승인 |
+
+AI에게 “규칙을 지켰는지 확인해”라고 묻는 것만으로 검증을 끝내지 않습니다. CI의 실제 결과와 사람이 확인한 요구 충족 여부를 함께 봅니다.
+
+## 6. 도구가 달라도 같은 기준을 읽게 연결한다
+
+### AI 코딩 도구별 진입점은 다를 수 있다
+
+팀의 공통 기준은 저장소에 두되, 사용하는 도구가 그 문서를 읽도록 연결해야 합니다. 다음은 문서 작성 시점의 공식 안내를 기준으로 한 구분입니다.
+
+| 도구 | 대표적인 지시 진입점 | 확인할 점 |
+|---|---|---|
+| Codex | `AGENTS.md`, 전역·경로별 지침과 override | 실제 작업 디렉터리, 로딩 범위·한도, 개인 override |
+| Claude Code | `CLAUDE.md`, 경로별 규칙 | 공통 `AGENTS.md`를 import하도록 연결했는지 |
+| Cursor | `AGENTS.md`, `.cursor/rules` | 적용 경로·조건과 사용 중인 AI 기능 |
+| GitHub Copilot | `.github/copilot-instructions.md`, 경로별 instructions, 일부 기능의 `AGENTS.md` | IDE·GitHub·에이전트별 지원 범위 |
+
+세부 동작은 각각 [Codex](https://learn.chatgpt.com/docs/agent-configuration/agents-md), [Claude Code](https://code.claude.com/docs/en/memory), [Cursor](https://cursor.com/docs/rules), [GitHub Copilot](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions)의 공식 문서를 확인합니다.
+
+특히 Claude Code의 공식 문서는 `AGENTS.md`를 직접 읽는 대신 `CLAUDE.md`에서 가져오는 방식을 설명합니다. 일반 Markdown 링크를 써두는 것과 제품이 제공하는 import 기능으로 내용을 로딩하는 것은 다릅니다.
+
+파일명도 `Agents.md`, `agents.md`가 아니라 해당 도구가 요구하는 정확한 표기를 사용합니다. 이 글의 공통 진입점은 **`AGENTS.md`**입니다.
+
+### 규칙 본문을 제품별로 복제하지 않는다
+
+도구를 세 개 쓴다고 동일한 팀 규칙을 세 파일에서 따로 고치면 쉽게 어긋납니다. 공통 본문은 한 곳에서 관리하고 도구별 파일에는 연결 방식과 꼭 필요한 제품별 차이만 둡니다.
+
+import를 지원하지 않는 환경은 공통 문서를 읽도록 명시하거나 검토된 방법으로 지시 파일을 생성할 수 있습니다. 생성 방식을 쓴다면 원본과 생성물의 일치도 검사해야 합니다. 단순 링크 하나만 적고 자동으로 전부 읽힐 것이라 가정하지 않습니다.
+
+`docs/ai-tools.md`에는 다음 항목을 기록합니다.
+
+- 팀이 확인한 도구와 버전, 기본 모델 또는 선택 정책
+- 프로젝트 규칙을 연결하는 파일과 활성화 방식
+- 개인 설정이 공통 규칙과 충돌하는지 확인하는 방법
+- 사용 가능한 파일·네트워크·외부 서비스의 범위
+- 새 세션과 하위 디렉터리에서 적용을 확인하는 절차
+- 도구나 모델을 바꿀 때 다시 수행할 대표 작업
+
+모든 개인 설정을 같게 만드는 대신, **결과에 영향을 주는 설정을 설명하고 확인할 수 있게 만드는 것**이 목적입니다.
+
+## 7. Skills, MCP, Hooks는 서로 다른 문제를 해결한다
+
+이름이 비슷해 보여도 공통 규칙, 반복 작업 절차, 외부 연결, 실행 제어는 구분해야 합니다.
+
+| 구성 요소 | 답하는 질문 | 예시 |
+|---|---|---|
+| `AGENTS.md` | 이 프로젝트에서 어떤 원칙을 지키는가? | 변경 범위와 검증 기준 |
+| Workflow·Skill | 이 종류의 작업을 어떤 순서로 수행하는가? | 버그 조사, 계약 검토, 릴리스 준비 |
+| MCP·커넥터 | 어떤 외부 정보와 기능에 접근하는가? | 이슈 조회, 문서 검색, 테스트 환경 조회 |
+| Hook | 특정 실행 시점에 무엇을 자동으로 처리하는가? | 도구 실행 전 확인, 변경 후 검사 |
+| CI·저장소 보호 | 어떤 근거가 있어야 변경을 받아들이는가? | 테스트 통과와 필수 리뷰 |
+
+### 반복되는 절차는 Workflow나 Skill로 만든다
+
+팀이 자주 수행하는 버그 수정, 데이터 변경 검토, 문서 작성 절차는 별도 문서로 분리합니다. 사용하는 도구가 Skills를 지원한다면 반복 절차를 `SKILL.md`와 참고 자료로 구성할 수 있습니다.
+
+Skill에는 사용 조건, 필요한 입력, 작업 단계, 산출물, 검증 방법과 중단 조건을 둡니다. **언제 사용하지 않아야 하는지도** 적으면 관련 없는 작업에 절차가 붙는 일을 줄일 수 있습니다.
+
+Agent Skills는 재사용 가능한 지침과 자료를 묶는 형식입니다. Codex는 이름과 설명을 먼저 확인하고 선택된 스킬의 본문을 읽는 단계적 로딩을 설명합니다. 이는 모델을 새로 학습시키는 기능과 다릅니다. [Agent Skills 개요](https://agentskills.io/home), [Codex Skills 문서](https://learn.chatgpt.com/docs/build-skills)
+
+제품마다 스킬을 찾는 위치와 호출 방식은 다릅니다. 임의의 `docs/workflows/`에 문서를 만들었다고 스킬이 자동 등록되지는 않습니다. 먼저 일반 문서로 절차를 검증하고, 반복 사용의 가치가 확인되면 도구에 연결해도 됩니다.
+
+### MCP는 문서와 도구의 연결 통로다
+
+MCP(Model Context Protocol)는 AI 애플리케이션이 외부의 도구·리소스 등과 연결되는 방식을 표준화합니다. 프로젝트 규칙을 대신하거나 연결된 정보의 정확성을 보증하는 장치는 아닙니다. [MCP 아키텍처](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture)
+
+처음에는 저장소와 필요한 문서를 읽는 기능만으로 시작할 수 있습니다. 이슈나 운영 정보가 계속 누락될 때 해당 연결을 추가합니다. 외부 글이나 이슈 본문의 문장을 팀의 승인된 지시와 같은 권한으로 취급하지 않도록 출처를 구분합니다.
+
+읽기만 필요한 작업에 수정·삭제 권한을 함께 주지 않습니다. 여러 사람이 같은 연결을 쓰더라도 각자의 권한과 감사 기록은 구분되어야 합니다.
+
+### Hook과 CI의 역할을 구분한다
+
+에이전트 Hook은 도구가 제공하는 특정 이벤트에 동작을 연결합니다. 예를 들어 도구 호출 전 검사나 파일 변경 후 처리를 자동화할 수 있습니다. 지원 이벤트와 차단 방식은 제품별로 확인해야 합니다. [Claude Code Hooks 안내](https://code.claude.com/docs/en/hooks-guide)
+
+Git의 로컬 훅을 관리하는 [pre-commit](https://pre-commit.com/)은 커밋 전 검사를 공유하는 도구입니다. 에이전트 Hook과 실행 시점이 다릅니다. 로컬 설정은 누락되거나 우회될 수 있으므로 중요한 검사는 CI에서도 실행합니다.
+
+처음부터 많은 MCP 서버와 스킬을 설치할 필요는 없습니다. 추가할 때마다 **해결할 반복 문제, 필요한 권한, 실패 시 처리, 유지보수 담당자**가 있는지 확인합니다.
+
+## 8. 필요한 도구는 역할별로 선택한다
+
+프로젝트의 언어와 환경은 달라도 필요한 도구의 역할은 비슷합니다.
+
+| 역할 | 제품·도구 예시 | 일관성을 위해 맞출 것 |
+|---|---|---|
+| 코드와 문서의 이력 | Git, GitHub 등의 저장소 | 브랜치, 리뷰, 기준 커밋 |
+| AI 구현과 탐색 | Codex, Claude Code, Cursor, GitHub Copilot | 적용 규칙·모델 정책·권한 |
+| 형식·정적 검사 | Prettier, Ruff 등 언어별 도구 | 저장소 설정과 버전 |
+| 로컬 검사 연결 | pre-commit | 공통 검사와 적용 여부 |
+| 자동 검증 | GitHub Actions 등 CI | 같은 입력·환경·필수 검사 |
+| 작업 추적 | 저장소 이슈·프로젝트 보드 | 소유자·상태·완료 기준·관련 PR |
+| 외부 맥락 연결 | 필요한 MCP 서버·커넥터 | 출처·권한·변경 기록 |
+
+[Prettier](https://prettier.io/docs/)는 코드 포맷팅을, [Ruff](https://docs.astral.sh/ruff/)는 Python의 린트와 포맷팅을 제공합니다. 이 둘을 모든 프로젝트에 함께 설치하라는 뜻은 아닙니다. 언어에 맞는 도구를 정하고 사람이든 AI든 같은 설정으로 실행하게 합니다.
+
+[GitHub Actions](https://docs.github.com/en/actions/get-started/understand-github-actions)는 저장소 이벤트에 검증 작업을 연결할 수 있습니다. 검사 결과를 실제 병합 조건으로 쓰려면 [브랜치 보호](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)도 설정해야 합니다.
+
+리뷰 담당자를 지정하는 [CODEOWNERS](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) 역시 파일만 두는 것과 승인을 필수로 요구하는 것이 다릅니다. AI 운영 규칙의 소유권과 실제 저장소 권한을 연결합니다.
+
+재현 가능한 실행 환경도 필요합니다. 런타임 버전, 의존성 잠금 파일, 검증 도구 버전, 환경변수의 이름과 테스트 데이터 준비 방법을 저장소에서 관리합니다. 비밀값 자체는 넣지 않습니다. Markdown은 이 설정의 위치와 사용법을 설명하고, 실행 도구의 설정은 실제 설정 파일이 담당합니다.
+
+## 9. 한 번의 AI 작업을 어떻게 진행할까?
+
+### 시작: 필요한 맥락을 선택하고 현재 상태를 확인한다
+
+매번 저장소 전체를 읽히거나 이전 대화 전부를 붙일 필요는 없습니다. 공통 규칙, 이번 작업, 관련 계약, 관련 코드와 테스트를 먼저 제공합니다.
+
+~~~text
+AGENTS.md와 TASK-014를 읽고 관련 계약·구현·테스트를 확인해줘.
+적용한 문서, 유지해야 할 동작, 변경 범위와 검증 방법을 짧게 정리해줘.
+범위 안의 구현 선택은 기존 기준에 따라 진행해줘.
+계약 충돌이나 중요한 미정 사항은 근거를 제시하고 담당자의 결정을 받아줘.
+~~~
+
+AI가 어떤 문서를 적용했다고 말하는 것만으로 실제 적용이 보장되지는 않습니다. 제공되는 컨텍스트·파일 접근 기록과 결과물을 함께 확인합니다.
+
+문서가 많아지면 토큰 한도와 관련 정보의 활용에도 영향을 줍니다. 공통 규칙은 작게 유지하고 작업별 문서는 필요할 때 읽도록 합니다. 컨텍스트 한도의 의미는 [토큰의 역할을 다룬 글]({% post_url 2026-09-07-ai-tokens-and-their-roles %})을 참고할 수 있습니다.
+
+### 작업 문서: 실행 가능한 단위로 범위를 자른다
+
+~~~markdown
+# TASK-014: 문서 보관 기능
+
+상태: 준비 완료
+담당자: 구현 담당자
+리뷰 담당자: 기능 책임자
+기준: 승인된 문서 보관 요구사항, 관련 데이터 계약
+
+## 목표
+- 승인된 보관 동작을 구현한다.
+
+## 변경 범위
+- 문서 보관 처리와 기본 목록에서의 제외
+- 관련 테스트와 사용 문서
+
+## 제외
+- 영구 삭제, 권한 모델 변경, 새 라이브러리 도입
+
+## 완료 기준
+- 정상·권한 없음·반복 요청을 검증한다.
+- 기존 문서를 읽는 기능에 회귀가 없다.
+- 변경한 계약과 구현의 차이가 없다.
+
+## 상태 기록
+- 완료한 항목:
+- 실행한 검증과 대상 커밋:
+- 남은 문제:
+- 다음 행동:
+~~~
+
+도구의 체크박스만 완료로 바꾸는 것이 아니라, 요구사항과 검증 결과를 연결합니다. 위 상태의 ‘준비 완료’는 검토 중인 요구사항을 담당자가 확정했다는 전제입니다.
+
+### 구현: AI에게 책임 범위와 피드백을 함께 준다
+
+“전체를 좋은 구조로 바꿔줘”보다 관찰 가능한 문제와 허용 범위를 줍니다. AI가 관련 없는 정리나 새로운 추상화를 추가하면 원래 작업과 분리하도록 합니다.
+
+기존 프로젝트에 적용할 때는 이상적인 구조를 먼저 강요하지 않습니다. 현재 코드의 반복 패턴과 이미 검증된 기준 구현을 찾고, 새 작업이 따라야 할 예시를 지정합니다. 오래된 코드 중 따르지 말아야 할 패턴도 구분합니다.
+
+규칙은 비슷하지만 서로 다른 스타일이 계속 생긴다면 프롬프트를 늘리기 전에 공통 기능, 타입, 인터페이스와 검사 도구로 표현할 수 있는지 검토합니다.
+
+### 완료: 변경된 동작과 검증 근거를 받는다
+
+AI의 완료 보고에는 적어도 다음이 있어야 합니다.
+
+- 어떤 사용자 동작이 어떻게 달라졌는가
+- 어느 요구사항·계약을 기준으로 작업했는가
+- 어떤 검증을 어느 상태에서 실행했고 결과는 무엇인가
+- 실행하지 못한 검사와 남은 불확실성은 무엇인가
+- 다음 작업자가 알아야 할 데이터·배포·호환성 영향은 무엇인가
+
+완료 보고를 받은 후 코드나 문서를 추가로 바꾸었다면 이전 검사 결과가 그 변경까지 보증하지 않습니다. 변경 영향에 맞는 검사를 다시 실행해야 합니다.
+
+## 10. 여러 사람과 여러 AI는 어떻게 함께 작업할까?
+
+### 역할을 나누되 같은 파일의 동시 수정을 줄인다
+
+여러 사람이 AI를 쓰는 것과 한 사람이 여러 에이전트를 실행하는 것은 다릅니다. 하지만 작업 분리와 통합 기준이 필요하다는 점은 같습니다.
+
+| 역할 | 책임 | 산출물 |
+|---|---|---|
+| 요구·설계 담당 | 목적·계약·범위 결정 | 승인된 요구사항과 설계 |
+| 구현 담당 | 정해진 범위의 변경 | 코드·문서·관련 테스트 |
+| 검토 담당 | 요구와 변경을 독립적으로 비교 | 재현 가능한 문제와 근거 |
+| 통합 담당 | 충돌·호환성·검증·병합 순서 확인 | 검증된 통합 변경 |
+
+이 역할을 모두 별도 AI로 만들 필요는 없습니다. 작은 팀에서는 사람이 역할을 나누고 한 AI를 순서대로 사용해도 됩니다. 여러 에이전트는 의존성이 낮은 작업을 분리할 때 검토합니다.
+
+예를 들어 계약이 확정되기 전에 UI와 데이터 처리를 동시에 만들게 하면 양쪽이 서로 다른 가정을 할 수 있습니다. 먼저 계약을 확정하고, 그다음 독립된 범위를 병렬로 진행하는 편이 낫습니다.
+
+Git의 브랜치와 [worktree](https://git-scm.com/docs/git-worktree)는 작업 디렉터리와 변경을 분리하는 데 사용할 수 있습니다. 하지만 DB, 테스트 데이터, 실행 포트, 원격 자원은 자동으로 분리되지 않습니다. 작업별로 공유해도 되는 자원과 분리할 자원을 정의합니다.
+
+### AI 리뷰를 별도 검토로 활용한다
+
+구현한 AI에게 “문제없지?”라고 묻는 대신, 검토 역할에 요구사항과 변경 내용을 주고 실패 조건을 찾게 합니다.
+
+~~~text
+승인된 요구사항과 이번 변경을 비교해줘.
+누락된 실패 조건, 호환성 변경, 데이터 손실 가능성을 우선 확인해줘.
+문제가 있으면 관련 위치와 재현 조건, 사용자 영향을 제시해줘.
+확인한 사실과 추정을 구분하고 코드는 직접 수정하지 마.
+~~~
+
+별도 세션이나 다른 모델도 같은 오류를 놓칠 수 있습니다. AI끼리 의견이 일치한 횟수를 품질 지표로 삼지 않고, 재현 가능한 근거와 테스트를 확인합니다. 병합을 승인하는 사람은 결과에 대한 책임을 유지합니다.
+
+### 긴 작업은 대화 대신 상태 문서로 인계한다
+
+인계 문서는 대화 전체를 요약하는 대신 다음 작업에 필요한 사실을 남깁니다.
+
+~~~markdown
+# TASK-014 인계
+
+기준: 작업 브랜치와 커밋 ID
+작업 디렉터리: 인계 대상 위치
+미커밋 변경: 유무와 해당 파일
+참조: 승인된 요구사항·계약·관련 ADR
+
+## 완료
+- 구현한 동작과 검증한 결과
+
+## 미완료
+- 남은 작업과 막힌 이유
 
 ## 검증
-- npm run check
-- npm run test:api: 실행 가능한 DB가 필요하며 테스트 데이터를 추가합니다.
+- 실행 환경, 검사 이름, 결과와 로그 위치
+- 아직 실행하지 못한 검사
 
-## 컨테이너 확인
-- docker compose --profile app up --build -d --wait app
-- 중지: docker compose --profile app down
-- 볼륨은 삭제하지 않으며 DB 데이터가 유지됩니다.
+## 다음 행동
+- 다음에 확인할 파일과 수행할 작업
 
-## 문서
-- docs/architecture.md
-- docs/adr/0001-modular-monolith.md
-- docs/runbook.md
-
-로컬 개발용 공유 키를 사용합니다. 공개 서비스용 사용자 인증은 별도로 구현합니다.
+## 주의
+- 다른 담당자가 수정 중인 영역
+- 가정·임시 우회·되돌릴 변경
 ~~~
 
-**파일: `docs/architecture.md`**
+다음 AI는 인계 문서의 기준 커밋과 실제 작업 상태가 일치하는지 먼저 확인합니다. 요약은 원본 코드와 실행 결과를 대신하는 증거가 아니라 그 근거를 찾기 위한 안내입니다.
 
-~~~markdown
-# 아키텍처
+## 11. 문서와 AI 설정도 유지보수한다
 
-- src/app: HTTP와 페이지 경계
-- src/features/tasks/schema.ts: 외부 입력 계약
-- src/features/tasks/repository.ts: PostgreSQL 접근
-- src/lib: 서버 공통 기능
-- migrations: 공유된 DB 변경 이력
+### 변경할 때 같은 PR에서 기준을 맞춘다
 
-route에서 repository를 호출하며 repository는 route를 참조하지 않는다.
-업무 규칙이 복잡해지면 service 계층을 추가한다.
-외부 API와 AI 모델 호출을 추가하면 adapter로 분리하고 timeout·재시도·비용 한도를 정한다.
-현재 저장소에는 서비스 내부의 AI 모델 호출 기능이 없다.
+기능이나 계약을 바꿨다면 관련 문서와 검증도 같은 변경에서 갱신합니다. 다만 코드 한 줄이 바뀔 때마다 모든 문서를 고치는 것은 아닙니다. 문서가 설명하는 사실이 바뀌었을 때 수정합니다.
 
-API 계약:
-- GET /api/health: 준비 완료 200, DB 또는 스키마 문제 503
-- GET /api/tasks: 인증 후 최신 20개, 인증 실패 401
-- POST /api/tasks: title 1~120자, 성공 201, 입력 오류 400, 인증 실패 401
-- 저장·조회 실패: 503, 내부 오류 본문과 DB 접속 정보는 외부에 반환하지 않음
-~~~
+| 바뀐 것 | 함께 확인할 문서 |
+|---|---|
+| 제품 범위·용어 | 프로젝트 개요와 요구사항 |
+| 모듈 책임·의존 방향 | 아키텍처와 ADR |
+| 외부 입출력 | 계약과 사용 문서 |
+| 검사 명령·실행 환경 | 개발·검증 문서 |
+| 도구·모델·규칙 로딩 | AI 도구 안내와 대표 작업 결과 |
+| 배포·복구 | 운영 문서 |
 
-**파일: `docs/adr/0001-modular-monolith.md`**
+승인된 문서에는 소유자와 상태를 표시하고, 필요하면 마지막 검토 기준을 남깁니다. 새 문서가 이전 문서를 대체했다면 이전 문서에서도 새 위치를 찾을 수 있게 합니다.
 
-~~~markdown
-# ADR 0001: 단일 애플리케이션으로 시작
-
-상태: 채택
-
-배경: 작은 팀이 AI를 사용해 함께 개발하며 초기 운영 비용을 줄여야 한다.
-결정: Next.js 단일 앱과 PostgreSQL을 사용하고 기능별 디렉터리로 책임을 나눈다.
-대안: 여러 서비스로 나누면 독립 배포가 가능하지만 통신·운영·통합 테스트가 늘어난다.
-비용: 초기에 배포 단위가 공유되므로 기능별 릴리스 독립성이 낮다.
-재검토 조건: 특정 기능의 부하·보안·팀 소유권 때문에 독립 배포가 필요해질 때.
-~~~
-
-ADR은 설계 결정의 이유를 남기는 문서입니다. AI나 새 팀원이 “더 좋아 보이는 구조”로 같은 결정을 반복해서 뒤집는 일을 줄입니다. 위 ADR의 선택은 이 예제를 위한 설계 판단이며 모든 팀의 정답은 아닙니다.
-
-## 7. 사람과 AI의 병렬 작업을 분리한다
-
-사람별로 저장소를 clone하고 **한 작업에 한 브랜치**를 사용합니다. 한 사람이 같은 PC에서 두 작업을 진행할 때는 worktree로 작업 디렉터리까지 나눌 수 있습니다.
-
-~~~bash
-git switch -c feat/task-pagination
-
-# 초기 main 커밋이 존재할 때, 별도 작업 디렉터리 추가
-git worktree add ../ai-team-search -b feat/task-search main
-~~~
-
-worktree는 파일과 브랜치를 분리하지만 외부 DB와 포트까지 분리하지는 않습니다. 각 디렉터리에서 `npm ci`와 `.env` 생성을 수행하고 앞서 설명한 프로젝트명·포트를 각각 지정합니다. [git worktree 공식 문서](https://git-scm.com/docs/git-worktree)를 참고합니다.
-
-### 작업 요청을 검증 가능한 문서로 만든다
-
-**파일: `docs/tasks/001-pagination.md`**
-
-~~~markdown
-# 작업 001: 작업 목록 페이지네이션
-
-목표: 최신 20개 이후의 작업을 중복 없이 조회한다.
-
-범위:
-- tasks 목록 repository와 GET API
-- 관련 계약 문서와 API 테스트
-
-제외:
-- 인증 방식 변경
-- 신규 라이브러리 추가
-- 기존 마이그레이션 수정
-
-완료 기준:
-- created_at과 id를 함께 사용하는 커서를 정의한다.
-- 커서가 없으면 첫 페이지를 반환한다.
-- 잘못된 커서는 400을 반환한다.
-- 25개 이상의 데이터를 넣고 다음 페이지에 중복이 없음을 검증한다.
-- 기존 목록 응답과 달라지는 형식을 문서에 명시한다.
-
-검증: npm run check, npm run test:api
-~~~
-
-이 문서는 **다음 작업의 예시**이며 현재 코드는 첫 20개만 반환합니다. AI에게 다음처럼 요청할 수 있습니다.
-
-~~~text
-AGENTS.md, docs/architecture.md, docs/tasks/001-pagination.md를 읽어줘.
-관련 구현과 테스트를 확인하고 변경할 파일과 호환성 영향을 정리한 뒤 구현해줘.
-기존 변경을 보존하고 이번 작업의 범위 안에서 수정해줘.
-완료 기준을 테스트로 확인하고 실행한 명령과 결과를 보고해줘.
-~~~
-
-두 작업이 같은 API 계약이나 잠금 파일을 바꾸면 작업자를 분리해도 충돌할 수 있습니다. **API 계약·마이그레이션·의존성 변경의 병합 순서**를 먼저 합의합니다. 예를 들어 한 사람이 응답 계약을 먼저 확정하고, 다른 사람이 그 계약을 기준으로 UI를 작성합니다.
-
-## 8. GitHub Actions를 실제 병합 조건으로 연결한다
-
-코드 검사뿐 아니라 빈 DB에서 마이그레이션과 API 테스트가 실행되어야 새 팀원이 프로젝트를 재현할 수 있습니다.
-
-**파일: `.github/workflows/ci.yml`**
-
-{% raw %}
-~~~yaml
-name: CI
-on:
-  pull_request:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-
-jobs:
-  verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: app
-          POSTGRES_PASSWORD: ci_password
-          POSTGRES_DB: app_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U app -d app_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://app:ci_password@127.0.0.1:5432/app_test
-      DEV_API_KEY: ci-only-development-key
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: npm run db:migrate
-      - run: npm run test:api
-      - run: docker build --target runner -t ai-team-starter:${{ github.sha }} .
-~~~
-{% endraw %}
-
-이 예제의 CI 값은 해당 실행에서 생성하는 일회성 DB용입니다. 운영 비밀값을 PR 검증에 전달하지 않습니다. 외부 PR 코드를 실행하면서 높은 권한을 주는 `pull_request_target` 구성도 사용하지 않습니다.
-
-예제는 읽기 쉬운 메이저 태그를 사용했습니다. 운영 저장소에서는 공식 action 저장소에서 검증한 **전체 커밋 SHA**로 고정하고 업데이트 PR로 관리합니다. 태그는 이동할 수 있다는 차이가 있습니다. [GitHub Actions 보안 안내](https://docs.github.com/en/actions/reference/security/secure-use)를 참고합니다.
-
-### 리뷰와 보호 규칙
-
-**파일: `.github/pull_request_template.md`**
-
-~~~markdown
-## 문제와 변경된 동작
-
-## 확인 방법과 실행 결과
-- [ ] npm run check
-- [ ] DB 관련 변경이면 마이그레이션과 API 테스트
-
-## 데이터·호환성·운영 영향
-- 마이그레이션:
-- 환경변수:
-- API 호환성:
-- 배포 실패 시 대응:
-
-## AI 사용 시 작성자 확인
-- [ ] 생성한 코드를 이해하고 요구사항과 비교했다.
-- [ ] 테스트가 실제 실패 조건을 검증하는지 확인했다.
-- [ ] 비밀값과 요청 범위 밖 변경이 없는지 확인했다.
-~~~
-
-`CODEOWNERS`를 사용할 경우 아래 계정명을 실제로 **저장소 write 권한이 있는 팀원**으로 바꾼 뒤 파일을 활성화합니다. 팀 계정은 조직 저장소에서 가시성과 권한을 확인해야 합니다.
-
-~~~text
-# .github/CODEOWNERS의 예시 — 계정명 교체 필요
-* @your-maintainer
-/.github/ @your-platform-reviewer
-/migrations/ @your-db-reviewer
-/AGENTS.md @your-maintainer
-~~~
-
-파일만 추가하면 리뷰가 강제되는 것은 아닙니다. GitHub의 `main` 보호 규칙 또는 ruleset에 다음을 설정합니다.
-
-1. PR을 통해서만 병합합니다.
-2. 작성자 외 최소 1명의 승인을 요구합니다.
-3. CODEOWNERS를 사용한다면 코드 소유자의 승인을 요구합니다.
-4. CI를 한 번 실행한 뒤 실제 표시되는 `verify` 체크를 필수 검사로 선택합니다.
-5. 새 커밋이 추가되면 이전 승인을 무효화하고, 미해결 대화를 해결하도록 합니다.
-6. 최신 main과의 검증을 요구하거나 팀 환경에 맞는 merge queue를 구성합니다.
-7. 강제 푸시와 브랜치 삭제를 막고 관리자 우회 범위를 최소화합니다.
-
-사용 가능한 규칙은 저장소 공개 여부와 요금제에 따라 다를 수 있습니다. [브랜치 보호](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)와 [CODEOWNERS](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) 문서를 확인합니다.
-
-## 9. 같은 결과물을 컨테이너로 실행한다
-
-**파일: `.dockerignore`**
-
-~~~text
-node_modules
-.next
-.git
-.env*
-coverage
-playwright-report
-test-results
-~~~
-
-**파일: `Dockerfile`**
-
-~~~dockerfile
-FROM node:24-bookworm-slim AS tools
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-
-FROM tools AS build
-ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
-
-FROM node:24-bookworm-slim AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV HOSTNAME=0.0.0.0
-ENV PORT=3000
-COPY --from=build --chown=node:node /app/.next/standalone ./
-COPY --from=build --chown=node:node /app/.next/static ./.next/static
-USER node
-EXPOSE 3000
-CMD ["node", "server.js"]
-~~~
-
-`standalone` 출력을 사용해 실행에 필요한 파일을 모읍니다. 이 예제에는 `public` 디렉터리가 없으며, 정적 파일을 추가했다면 런타임 이미지에 `public`도 복사해야 합니다. [Next.js standalone 설명](https://nextjs.org/docs/app/api-reference/config/next-config-js/output)을 참고합니다.
-
-개발 서버가 같은 포트를 사용 중이면 먼저 종료하고 다음을 실행합니다.
-
-~~~bash
-docker compose --profile app up --build -d --wait app
-curl --fail-with-body http://127.0.0.1:3000/api/health
-docker compose --profile app logs --tail=50 app
-~~~
-
-DB 준비, 마이그레이션, 앱 실행의 순서로 동작합니다. 이 Compose 파일은 개발·컨테이너 검증용이며 포트를 로컬 주소에만 공개합니다. 공유 서버에 배포할 때는 개발 비밀번호와 공유 키를 그대로 사용하지 않습니다.
-
-### 운영 배포는 검증된 이미지와 데이터 변경을 함께 다룬다
-
-실제 배포의 기본 순서는 다음과 같이 정할 수 있습니다.
-
-~~~text
-PR 검사와 사람 리뷰
-  → main 병합 후 동일 검사
-  → 커밋 SHA 태그로 이미지 생성·레지스트리 저장
-  → 스테이징에서 마이그레이션·헬스 체크·핵심 기능 확인
-  → 배포 담당자의 승인
-  → 운영 백업 확인과 호환되는 마이그레이션
-  → 같은 이미지 digest를 운영에 배포
-  → 상태 확인, 오류율·지연 시간 관찰
-~~~
-
-배포 환경마다 클라우드 권한과 실행 플랫폼이 다르므로 이 글의 CI는 이미지를 외부에 푸시하거나 운영에 자동 배포하지 않습니다. 운영 배포를 추가할 때는 인증·권한, HTTPS, 비밀 관리, DB 백업·복구, 요청 크기 제한, 접근 로그와 경보를 해당 환경에 맞게 연결합니다.
-
-앱 이미지를 이전 버전으로 되돌려도 이미 바꾼 DB 스키마가 자동으로 돌아가지는 않습니다. 먼저 새 열을 추가하고 구버전과 신버전이 함께 동작하게 만든 뒤, 별도 배포에서 이전 열을 제거하는 식으로 변경을 나눕니다.
-
-**파일: `docs/runbook.md`**
-
-~~~markdown
-# 실행·장애 대응
-
-## 담당자
-- 서비스 담당: 저장소 관리자가 실제 이름으로 지정
-- DB와 복구 담당: 실제 이름으로 지정
-
-## 로컬 상태 확인
-- docker compose ps
-- curl --fail-with-body http://127.0.0.1:3000/api/health
-- docker compose --profile app logs --tail=100 app
-
-## 503 응답
-1. DB 서비스가 실행 중인지 확인한다.
-2. DATABASE_URL의 호스트·포트가 실행 위치와 일치하는지 확인한다.
-3. 마이그레이션 적용 실패를 확인한다.
-4. 키·DB URL·사용자 입력 전체를 공용 로그에 복사하지 않는다.
-
-## 배포 실패
-- 배포 커밋과 이전 이미지 digest를 기록한다.
-- DB 변경과 이전 앱의 호환성을 확인한 뒤 앱을 되돌린다.
-- 데이터 손실이 의심되면 추가 쓰기를 제한하고 복구 담당자에게 전달한다.
-- 백업 복구는 별도 DB에서 검증한 뒤 전환한다.
-
-## 개발 데이터 보존
-- docker compose --profile app down은 볼륨을 남긴다.
-- 볼륨 삭제는 별도 작업이며 일반적인 중지·재시작 절차에 포함하지 않는다.
-~~~
-
-## 10. 첫 병합과 새 팀원 온보딩
-
-모든 파일을 만든 뒤 포맷과 검증을 실행합니다. `.env`가 추적되지 않는지도 확인합니다.
-
-~~~bash
-npm run format
-npm run check
-npm run db:migrate
-npm run test:api
-git status --short
-git check-ignore .env
-git diff --check
-~~~
-
-첫 담당자는 결과를 확인한 뒤 초기 커밋을 생성하고 팀 저장소에 올립니다. 원격 저장소 URL은 실제 팀 저장소로 바꿉니다.
-
-~~~bash
-git add .
-git commit -m "chore: initialize team development baseline"
-git remote add origin https://github.com/YOUR-ORG/ai-team-starter.git
-git push -u origin main
-~~~
-
-이 초기화 직후 CI 실행 결과를 확인하고 앞서 설명한 main 보호 규칙을 활성화합니다. 그다음부터는 작업 브랜치와 PR을 사용합니다. 새 팀원은 저장소를 clone한 뒤 README의 명령으로 시작할 수 있어야 합니다.
-
-최종 완료 기준은 다음과 같습니다.
-
-- 새 clone에서 `npm ci`로 의존성을 재현할 수 있습니다.
-- 빈 DB에서 마이그레이션을 적용하고 API를 실행할 수 있습니다.
-- 잘못된 입력과 인증 없는 요청이 테스트에서 거절됩니다.
-- CI가 실패하거나 필수 리뷰가 없으면 main에 병합할 수 없습니다.
-- AI는 공통 규칙과 작업 문서를 읽고 같은 검증 명령을 사용합니다.
-- 담당자가 바뀌어도 설계 이유와 실행·복구 절차를 저장소에서 찾을 수 있습니다.
-
-이후 AI에게 기능을 맡길 때는 구현할 내용뿐 아니라 **변경 가능한 범위, 유지해야 할 계약, 검증할 결과**를 함께 제공합니다. 팀이 유지보수하는 대상은 AI와 나눈 대화가 아니라, 검증 가능한 코드와 그 결정을 설명하는 저장소입니다.
+### 같은 실수가 반복되면 원인을 분류한다
+
+| 반복 문제 | 먼저 살펴볼 원인 | 개선 방향 |
+|---|---|---|
+| 기존 기능을 중복 구현 | 관련 코드를 찾지 못함 | 코드 지도·기준 구현·검색 절차 보완 |
+| 다른 구조로 구현 | 경계와 결정 이유가 불명확 | 아키텍처·ADR·의존 검사 보완 |
+| 규칙을 적용하지 않음 | 로딩 누락·충돌·범위 오류 | 도구 연결과 활성 지침 점검 |
+| 검사는 통과했는데 요구와 다름 | 완료 기준이나 테스트가 약함 | 계약과 실패 조건 보완 |
+| 이전 결정을 다시 질문 | 결정이 개인 대화에만 존재 | 공통 문서로 승격 |
+| 사소한 일에도 멈춤 | 승인 규칙이 지나치게 넓음 | 자율 진행 범위와 질문 조건 구분 |
+| 다른 팀원의 변경을 망침 | 공유 작업 상태가 불명확 | 작업 분리·인계·통합 담당 지정 |
+
+실수가 생길 때마다 `AGENTS.md`에 경고 한 줄을 추가하면 결국 길고 모순된 문서가 될 수 있습니다. 정보가 부족했는지, 실행 권한이 잘못됐는지, 검증이 약했는지를 먼저 찾습니다.
+
+### 모델이나 규칙을 바꾸면 대표 작업으로 확인한다
+
+AI 도구와 모델, 지시 문서도 변경에 따라 동작이 달라질 수 있습니다. 팀의 실제 작업을 작게 대표하는 평가 항목을 준비합니다.
+
+- 기존 패턴을 따라 작은 기능을 추가한다.
+- 재현 조건이 있는 버그를 수정한다.
+- 계약을 깨뜨리는 변경을 리뷰에서 찾는다.
+- 하위 영역의 규칙을 적용한다.
+- 모순되거나 미정인 요구를 발견한다.
+- 작업 상태를 다른 세션에 정확하게 인계한다.
+
+평가에는 입력 문서, 시작 커밋, 기대 결과와 평가 기준을 함께 고정합니다. 응답 문장이 같을 필요는 없습니다. 규칙 준수, 범위 밖 변경, 누락된 검증, 사람이 다시 고친 양을 비교합니다. 모델의 비결정성을 고려해 한 번의 성공을 보장으로 해석하지 않습니다.
+
+## 12. 프로젝트 시작 시 적용할 순서
+
+바로 시작하려면 다음 순서로 준비할 수 있습니다. 각 단계의 산출물이 다음 단계의 입력이 됩니다.
+
+1. **사람의 책임을 정합니다.** 요구, 설계, 리뷰와 배포를 누가 결정하는지 지정합니다.
+2. **목적과 범위를 적습니다.** 프로젝트 개요와 핵심 용어, 첫 기능의 완료 기준을 확정합니다.
+3. **현재 구조와 개발 기준을 문서화합니다.** 새 프로젝트라면 선택한 구조를, 기존 프로젝트라면 검증된 현재 방식을 기준으로 합니다.
+4. **AGENTS.md를 만듭니다.** 공통 원칙과 작업별 문서 선택 방법을 넣습니다.
+5. **사용할 AI 도구에 연결합니다.** 규칙 로딩, 개인 설정, 파일·네트워크 권한을 확인합니다.
+6. **검증 도구를 연결합니다.** 형식·기능 검사를 만들고 CI와 병합 조건으로 연결합니다.
+7. **작은 실제 작업을 맡깁니다.** 범위가 분명하고 결과를 확인할 수 있는 작업으로 시작합니다.
+8. **다른 사람이 새 세션에서 재현합니다.** 개인 대화 없이 같은 문서를 찾아 작업·검증·인계를 할 수 있는지 봅니다.
+9. **반복 절차만 확장합니다.** 필요가 확인되면 Skill, MCP, Hook과 전문 문서를 추가합니다.
+
+초기 세팅의 완료는 문서 파일이 많아진 시점이 아닙니다. **새 팀원과 새 AI 세션이 같은 기준을 찾아 작업하고, 그 결과를 같은 방법으로 검증하며, 다음 사람에게 상태를 넘길 수 있는 시점**입니다.
+
+팀의 AI 활용 수준을 높이는 일은 더 긴 프롬프트를 만드는 것에 그치지 않습니다. 사람의 결정을 공통 문서로 남기고, 필요한 맥락을 읽히고, 실제 도구로 검증하는 흐름을 프로젝트의 일부로 만드는 일입니다.
