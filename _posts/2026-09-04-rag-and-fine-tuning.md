@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "RAG와 파인튜닝 완전 이해: 차이점부터 설계와 적용 분야까지"
+title: "RAG와 파인튜닝 : 차이점부터 설계와 적용 분야까지"
 categories:
   - "AI"
 permalink: /topics/ai/rag-and-fine-tuning/

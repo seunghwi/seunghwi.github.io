@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "LLM 파라미터와 양자화 완전 이해: 모델 크기를 줄이는 원리와 효과"
+title: "LLM 파라미터와 양자화 : 모델 크기를 줄이는 원리와 효과"
 categories:
   - "AI"
 permalink: /topics/ai/llm-parameters-and-quantization/

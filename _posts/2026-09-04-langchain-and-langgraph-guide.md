@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "LangChain과 LangGraph 완전 이해: 개념부터 에이전트 워크플로까지"
+title: "LangChain과 LangGraph : 개념부터 에이전트 워크플로까지"
 categories:
   - "AI"
 permalink: /topics/ai/langchain-and-langgraph-guide/

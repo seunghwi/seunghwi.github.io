@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "AI 서빙 프레임워크 완전 가이드: Ollama·vLLM·SGLang 비교와 선택"
+title: "AI 서빙 프레임워크 : Ollama·vLLM·SGLang 비교와 선택"
 categories:
   - "AI"
 permalink: /topics/ai/llm-serving-frameworks/

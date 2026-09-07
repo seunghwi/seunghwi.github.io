@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "RC카 LiPo 배터리 종류와 안전한 관리 방법"
+title: "RC카 LiPo 배터리 종류와 안전한 관리"
 categories:
   - "RC카"
 permalink: /topics/rc-car/rc-car-lipo-battery-guide/

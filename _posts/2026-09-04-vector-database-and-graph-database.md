@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "벡터 DB와 그래프 DB 이해하기: 차이점과 활용 상황"
+title: "벡터 DB와 그래프 DB : 차이점과 활용 상황"
 categories:
   - "컴퓨터 기술"
 permalink: /topics/computer-technology/vector-database-and-graph-database/

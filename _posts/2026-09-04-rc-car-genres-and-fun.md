@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "RC카 장르별 재미 포인트: 나에게 맞는 주행 찾기"
+title: "RC카 장르별 재미 : 나에게 맞는 주행 찾기"
 categories:
   - "RC카"
 permalink: /topics/rc-car/rc-car-genres-and-fun/

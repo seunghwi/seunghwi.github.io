@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "MCP 완전 이해: AI와 외부 도구를 연결하는 표준 프로토콜"
+title: "MCP : AI와 외부 도구를 연결하는 표준 프로토콜"
 categories:
   - "AI"
 permalink: /topics/ai/model-context-protocol-guide/

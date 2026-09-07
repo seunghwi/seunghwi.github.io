@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "투어링 RC카 구조 완전 해설: 섀시부터 구동계·서스펜션까지"
+title: "투어링 RC카 구조 : 섀시부터 구동계·서스펜션까지"
 categories:
   - "RC카"
 permalink: /topics/rc-car/touring-rc-car-structure/

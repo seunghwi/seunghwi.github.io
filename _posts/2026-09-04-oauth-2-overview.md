@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "OAuth 2.0 핵심 이해: 권한 위임의 원리와 사용 예제"
+title: "OAuth 2.0 : 권한 위임의 원리와 사용 예제"
 categories:
   - "컴퓨터 기술"
 permalink: /topics/computer-technology/oauth-2-overview/
