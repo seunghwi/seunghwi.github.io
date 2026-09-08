@@ -18,9 +18,9 @@ minimal_mistakes_skin    : "dark" # "air", "aqua", "contrast", "dark", "dirt", "
 locale                   : "ko-KR"
 title                    : "SH Log"
 title_separator          : "|"
-subtitle                 : "기록하는 습관 들이기"
+subtitle                 : "SH 저장소"
 name                     : "SH"
-description              : "기록을 위한 SH의 블로그 입니다. <br> AI, RC카 등 다양한 주제를 다룹니다. <br> <a href=\"/pages/ai_learning_simulator.html/\">AI 학습 시뮬레이터</a>"
+description              : "SH의 저장소 입니다. <br> AI, RC카 등 다양한 주제를 다룹니다. <br> <a href=\"/docs/html/ai_learning_simulator.html/\">AI 학습 시뮬레이터</a>"
 url                      : "https://seunghwi.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
@@ -106,7 +106,7 @@ analytics:
 author:
   name             : "SH"
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "기록을 위한 SH의 블로그 입니다. <br><br> <a href=\"/ai_learning_simulator.html/\">AI 학습 시뮬레이터</a>"
+  bio              : "SH의 저장소 입니다. <br><br> <a href=\"/docs/html/ai_learning_simulator.html\">AI 학습 시뮬레이터</a>"
   location         : "South Korea"
   email            :
   links:
