@@ -106,7 +106,7 @@ analytics:
 author:
   name             : "SH"
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "SH의 저장소 입니다. <br><br> <a href=\"/demo/ai_learning_simulator.html\">AI 학습 시뮬레이터</a>"
+  bio              : "SH의 저장소 입니다. <br><br> <a href=\"/demo/ai_learning_simulator.html\"><p style=\"color: red; font-weight: bold;\">AI 학습 시뮬레이터</a> <br> <a href=\"/topics/ai/learning-simulator-explain\"><p style=\"color: blue; font-weight: bold;\">AI 학습 시뮬레이터 해설</a>"
   location         : "South Korea"
   email            :
   links:
