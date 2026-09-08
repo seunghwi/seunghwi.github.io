@@ -3,6 +3,7 @@ layout: single
 title: "데이터를 빨리 찾는 기술: 인덱스부터 Redis·Elasticsearch까지"
 categories:
   - "컴퓨터 기술"
+permalink: /topics/computer-technology/fast-data-retrieval-index-cache-search/
 tags:
   - "데이터베이스"
   - "인덱스"

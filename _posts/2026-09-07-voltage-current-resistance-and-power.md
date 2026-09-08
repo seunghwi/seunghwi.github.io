@@ -3,6 +3,7 @@ layout: single
 title: "전기의 네 가지 기본: 전압·전류·저항·전력을 원리부터 이해하기"
 categories:
   - "하드웨어 원리"
+permalink: /topics/hardware-principles/voltage-current-resistance-and-power/
 tags:
   - "전기 기초"
   - "전압"

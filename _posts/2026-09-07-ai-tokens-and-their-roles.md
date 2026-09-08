@@ -3,6 +3,7 @@ layout: single
 title: "AI의 토큰은 무슨 일을 할까? 입력부터 학습·추론·비용까지"
 categories:
   - "AI"
+permalink: /topics/ai/ai-tokens-and-their-roles/
 tags:
   - "AI"
   - "LLM"

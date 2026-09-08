@@ -3,6 +3,7 @@ layout: single
 title: "AI가 바뀌어도 흔들리지 않는 개발: AGENTS.md와 팀 프로젝트 운영 원칙"
 categories:
   - "AI"
+permalink: /topics/ai/maintainable-ai-team-project-setup/
 tags:
   - "AI 코딩"
   - "프로젝트 세팅"

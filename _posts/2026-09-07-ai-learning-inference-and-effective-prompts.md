@@ -3,6 +3,7 @@ layout: single
 title: "AI는 어떻게 배우고 답할까? 원리로 이해하는 효과적인 프롬프트"
 categories:
   - "AI"
+permalink: /topics/ai/ai-learning-inference-and-effective-prompts/
 tags:
   - "AI"
   - "LLM"
