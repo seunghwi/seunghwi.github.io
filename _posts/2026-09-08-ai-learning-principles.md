@@ -3,7 +3,7 @@ layout: single
 title: "AI 학습 시뮬레이터 설명"
 categories:
   - "AI"
-permalink: /topics/ai/learning-simulator/
+permalink: /topics/ai/learning-simulator-explain/
 tags:
   - "AI"
   - "LLM"
