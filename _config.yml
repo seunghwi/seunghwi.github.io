@@ -106,7 +106,7 @@ analytics:
 author:
   name             : "SH"
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "기록을 위한 SH의 블로그 입니다. <br> AI, RC카 등 다양한 주제를 다룹니다. <br> <a href=\"/pages/ai_learning_simulator.html/\">AI 학습 시뮬레이터</a>"
+  bio              : "기록을 위한 SH의 블로그 입니다. <br><br> <a href=\"/ai_learning_simulator.html/\">AI 학습 시뮬레이터</a>"
   location         : "South Korea"
   email            :
   links:
